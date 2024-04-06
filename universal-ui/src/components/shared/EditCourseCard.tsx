@@ -1,7 +1,7 @@
 import { Models } from "appwrite";
 import { Button } from "../ui/button";
-import { Link, useNavigate } from "react-router-dom";
-import { usePurchseCourse, useUpdateCourse, } from "@/lib/react-query/queries";
+import {  useNavigate } from "react-router-dom";
+import { useUpdateCourse, } from "@/lib/react-query/queries";
 
 type CourseCardProps = {
     course: Models.Document;

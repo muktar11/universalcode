@@ -3,7 +3,7 @@ import { Models } from "appwrite";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, {useState } from "react";
+import  {useState } from "react";
 import {
   Form,
   FormControl,
@@ -18,7 +18,7 @@ import {
 import  { EventValidation } from "@/lib/validation";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader } from "@/components/shared";
-import { useCreateEvent, useUpdateEvent } from "@/lib/react-query/queries";
+import {  useUpdateEvent } from "@/lib/react-query/queries";
 import {  IUpdateEvent } from "@/types";
 
 type EventsCardProps = {
@@ -56,6 +56,8 @@ const EventEditCard = ({ event, action }: EventsCardProps) => {
         startingday: value.startingday,
         endingday: value.endingday,
         audience: value.audience,
+        class_link: value.class_link,
+        class_password: value.class_password,
       };
 
       const CreateEvent = await updateEvent(newEvent)
@@ -68,15 +70,12 @@ const EventEditCard = ({ event, action }: EventsCardProps) => {
       navigate("/");
     };
     const [showFields, setShowFields] = useState(false);
-    const [dropdownVisible, setDropdownVisible] = useState(false);
+
 
     const handleUpdateClick = () => {
       setShowFields(!showFields);
     };
 
-    const handleSwitchToggle = () => {
-      setDropdownVisible(!dropdownVisible);
-    };
   
   return (
     <div className="post-card">

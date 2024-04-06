@@ -1,3 +1,5 @@
+from audioop import reverse
+from base64 import urlsafe_b64encode
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from .models  import Books, EmailSubscription, Course, Post, Events, Users 
@@ -150,13 +152,21 @@ class RegisterSalesSerializer(serializers.ModelSerializer):
         # Handling many-to-many relationship
         
         return user
+    
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from rest_framework import serializers
+from .models import Users
+from django.core.mail import send_mail
+from django.utils.encoding import force_bytes, force_str
+from django.urls import reverse_lazy
 
 
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class RegisterStudentSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
-
 
     class Meta:
         model = Users
@@ -169,33 +179,75 @@ class RegisterStudentSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        sales_person_id = validated_data.get('sales_person_id', 0) 
         user = Users.objects.create(
             email=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            phone = validated_data['phone'], 
-            address=validated_data['address'],         
+            phone=validated_data['phone'], 
+            address=validated_data['address'],  
+            sales_person_id=sales_person_id         
         )
-
+     
         user.set_password(validated_data['password'])
-        user.is_student=True
+        user.is_student = True
+        user.is_active = True  # Deactivate the user until they confirm registration
         user.save()
 
-        return user
-    
+        # Generate unique token for email confirmation
+        token_generator = default_token_generator
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = token_generator.make_token(user)
+
+        # Sending confirmation email with confirmation link
+        subject = 'Registration Confirmation'
+        confirmation_link = reverse_lazy('confirm-registration', kwargs={'uidb64': uid, 'token': token})
+        confirmation_url = f'{settings.BASE_URL}{confirmation_link}'
+        message = f'Dear {user.first_name},\n\nThank you for registering to Universal University we are pleased you have joined \n\n please view your site to obtain your course and grow as a person and agin we are pleased you have decied to join us.'
+        from_email = 'universal.edu@example.com'  # Your email address
+        to_email = user.email
+        send_mail(subject, message, from_email, [to_email])
+
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
+
+        # Return tokens along with user data
+        return {
+            'refresh': str(refresh),
+            'access': str(access),
+            'user': user
+        }
+
+    @staticmethod
+    def confirm_registration(uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64)
+            user = Users.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, Users.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.is_email_confirmed = True
+            user.is_active = True
+            user.save()
+            return user
+        else:
+            return None 
+
+
+
 class UsersSerializer(serializers.ModelSerializer):
     no_of_notifications = serializers.IntegerField()
-    associated_events = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Users 
         fields = ('first_name', 'last_name', 'email', 'phone', 'gender',
                   'emailfield', 'address', 'is_teacher', 'is_student',
-                  'no_of_notifications', 'associated_events')
+                  'no_of_notifications')
 
-    def get_associated_events(self, obj):
-        events = obj.associated_events.all()
-        return [event.title for event in events]
+    
     
 
 class ResetPasswordSerializer(serializers.Serializer):
@@ -231,25 +283,56 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields =  ('__all__')
 
-class  EventsSerializer(serializers.ModelSerializer):
+
+class EventsSerializer(serializers.ModelSerializer):
     class Meta:
-        model =  Events
-        fields = ('__all__')
+        model = Events
+        fields = '__all__'
 
-
-from rest_framework import serializers
+    
 
 class StudentProfileSerializer(serializers.ModelSerializer):
+    no_of_notifications = serializers.IntegerField()
+    my_events = serializers.SerializerMethodField()
+  
     class Meta:
         model = Users 
         fields =  ['id', 'first_name', 'last_name', 'email',
                    'phone', 'gender', 'emailfield', 'profile_imageId', 
                    'profile_imageUrl', 'background_imageId', 'background_imageUrl',
-                   'address', 'Program', 'Term', 
+                   'address', 'Program', 'Term', 'my_courses',
                    'school_credentials_two_imageId', 'school_credentials_three_imageId',
                    'school_credentials_imageUrl', 'school_credentials_two_imageUrl', 
-                   'school_credentials_three_imageUrl',
+                   'school_credentials_three_imageUrl', 'no_of_notifications', 'my_events',
                   ]
+
+    def get_my_events(self, obj):
+        # Retrieve events associated with the user's courses
+        my_courses = obj.my_courses
+        if my_courses:
+            return Events.objects.filter(audience=my_courses).values('id', 'title', 'startingtime', 'endtime', 'description', 'class_link', 'class_password',
+                                                                      'startingday', 'endingday', 'audience', 'created_at').order_by('-created_at')
+        else:
+            return []  # Return an empty list if no courses are associated
+        
+
+
+class StudentEventSerializer(serializers.ModelSerializer):
+    no_of_notifications = serializers.IntegerField()
+    my_events = serializers.SerializerMethodField()
+  
+    class Meta:
+        model = Users 
+        fields =  ['id', 'no_of_notifications', 'my_events']
+
+    def get_my_events(self, obj):
+        # Retrieve events associated with the user's courses
+        my_courses = obj.my_courses
+        if my_courses:
+            return Events.objects.filter(audience=my_courses).values('id', 'title', 'startingtime', 'endtime', 'description', 'class_link', 'class_password',
+                                                                      'startingday', 'endingday', 'audience', 'created_at').order_by('-created_at')
+        else:
+            return []  # Return an empty list if no courses are associated
 
 
 class StudentProfileUpdateSerializer(serializers.ModelSerializer):

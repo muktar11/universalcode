@@ -60,15 +60,17 @@ const StaffForm = ({post, action }: PostFormProps) => {
             first_name: user.first_name,
             last_name: user.last_name,
             email: user.email,
-            phone: user.phone, 
+            phone: user.phone,
             birthday: user.birthday,
-            bio: user.bio, 
+            bio: user.bio,
             extracurricular: user.extracurricular,
             address: user.address,
-            mda_imageUrl : user.mda_imageUrl , 
-            photo_imageUrl : user.photo_imageUrl ,
-            school_credential_imageUrl : user.school_credential_imageUrl ,
-            terms_and_agreement_imageUrl : user.terms_and_agreement_imageUrl ,
+            mda_imageUrl: user.mda_imageUrl,
+            photo_imageUrl: user.photo_imageUrl,
+            school_credential_imageUrl: user.school_credential_imageUrl,
+            terms_and_agreement_imageUrl: user.terms_and_agreement_imageUrl,
+            _id: "",
+            emailfield: ""
           }
             const newUser = await createUserStaff(newStaff);
             console.log('newuser', newUser)

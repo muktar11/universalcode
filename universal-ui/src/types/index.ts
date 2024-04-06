@@ -39,9 +39,25 @@ export type INewCourse = {
 };
 
 export type INewEvent = {
+  id: string;
+  no_of_notifications: string; 
   title: string;
   startingtime: string;
   endtime: string;
+  class_link: string;
+  class_password: string;
+  description: string;
+  startingday: string;
+  endingday: string;
+  audience: string;
+};
+
+export type IUserEvent = {
+  title: string;
+  startingtime: string;
+  endtime: string;
+  class_link: string;
+  class_password: string;
   description: string;
   startingday: string;
   endingday: string;
@@ -53,6 +69,8 @@ export type IUpdateEvent = {
   id: string;
   title: string;
   startingtime: string;
+  class_link: string;
+  class_password: string;
   endtime: string;
   description: string;
   startingday: string;
@@ -147,6 +165,7 @@ export type IStaffUser = {
 
 
 export type ISalesUser = {
+  emailfield: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -163,6 +182,7 @@ export type ISalesUser = {
 
 
 export type INewStudentUser = {
+  sales_person_id: string;
   first_name: string;
   last_name: string;
   email: string;

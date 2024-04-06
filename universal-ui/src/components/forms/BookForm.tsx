@@ -3,7 +3,6 @@ import { Models } from "appwrite";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import {
   Form,
@@ -17,9 +16,9 @@ import {
 } from "@/components/ui";
 import { IUpdateCourseValidation  } from "@/lib/validation";
 import { useToast } from "@/components/ui/use-toast";
-import { FileUploader, PdfFileUploader, Loader } from "@/components/shared";
+import {  PdfFileUploader, Loader } from "@/components/shared";
 import { usePublishBookAccount } from "@/lib/react-query/queries";
-import {  IPublishBookUser, IStaffUser } from "@/types";
+import {  IPublishBookUser,  } from "@/types";
 
 type PostFormProps = {
   book?: Models.Document;

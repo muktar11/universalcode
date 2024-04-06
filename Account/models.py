@@ -6,30 +6,32 @@ from phonenumber_field.modelfields import PhoneNumberField
 import random
 USER_TYPE = (("HOD", "HOD"), ( "Staff", "Staff"), ("Student", "Student"))
 GENDER = [("M", "Male"), ("F", "Female")]
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 PROGRAM = (("All", "All"), ("BL", "BL"),("BE", "BE"),("BP", "BP"), ("BCS", "BCS"))
-
 AUDIENCE_CHOICES = [
-        ("WebDesign", "WebDesign"),
-        ("GraphicsDesign", "GraphicsDesign"),
-        ("UI/UX", "UI/UX"),
-        ("StoreKeeping", "StoreKeeping"),
-        ("DigitalExplorer", "DigitalExplorer"),
-        ("WebDevelopment", "WebDevelopment"),
-        ("Coding", "Coding"),
-        ("TradingTitans", "TradingTitans"),
-        ("PhotoshopProdigy", "PhotoshopProdigy"),
-        ("CulinaryCanvas", "CulinaryCanvas"),
-        ("SocialMediaMaverick", "SocialMediaMaverick"),
-        ("FitProInstructor", "FitProInstructor"),
-        ("NumberCruncher", "NumberCruncher"),
-        ("WeddingWizard", "WeddingWizard"),
-        ("WordPress Wiz", "WordPress Wiz"),
-        ("Influence Igniter", "Influence Igniter"),
-        ("Stocks Savvy", "Stocks Savvy"),
-        ("E-commerce Expertise", "E-commerce Expertise"),
-        ("Digital Explorer", "Digital Explorer"),
-    ]
+    ("WebDesign", "WebDesign"),
+    ("GraphicsDesign", "GraphicsDesign"),
+    ("UI/UX", "UI/UX"),
+    ("StoreKeeping", "StoreKeeping"),
+    ("DigitalExplorer", "DigitalExplorer"),
+    ("WebDevelopment", "WebDevelopment"),
+    ("Coding", "Coding"),
+    ("TradingTitans", "TradingTitans"),
+    ("PhotoshopProdigy", "PhotoshopProdigy"),
+    ("CulinaryCanvas", "CulinaryCanvas"),
+    ("SocialMediaMaverick", "SocialMediaMaverick"),
+    ("FitProInstructor", "FitProInstructor"),
+    ("NumberCruncher", "NumberCruncher"),
+    ("WeddingWizard", "WeddingWizard"),
+    ("WordPress Wiz", "WordPress Wiz"),
+    ("Influence Igniter", "Influence Igniter"),
+    ("Stocks Savvy", "Stocks Savvy"),
+    ("E-commerce Expertise", "E-commerce Expertise"),
+    ("Digital Explorer", "Digital Explorer"),
+]
+
+
 PROGRAM = (("All", "All"),
             ("BL", "BL"),
             ("BE", "BE"),
@@ -104,6 +106,39 @@ class Course(models.Model):
     image =  models.FileField(upload_to=course_file_path, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+
+
+class Events(models.Model):
+    _id = models.AutoField(primary_key=True, editable=False)
+    title = models.CharField(max_length=100, verbose_name="Title for your event")
+    startingtime = models.CharField(max_length=120)
+    endtime = models.CharField(max_length=120)
+    description = models.TextField(blank=True, null=True)
+    class_link = models.TextField(blank=True, null=True)
+    class_password = models.TextField(blank=True, null=True)
+    startingday = models.DateField(blank=False, null=True)
+    endingday = models.DateField(blank=False, null=True)
+    audience = models.CharField(max_length=50, choices=AUDIENCE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update related users based on audience
+        related_users = Users.objects.filter(my_courses=self.audience)
+        for user in related_users:
+            if user.my_events is not None and self not in user.my_events.all():
+                user.my_events.add(self)
+
+@receiver(post_save, sender=Events)
+def update_users_on_event_save(sender, instance, **kwargs):
+    # This function listens to post_save signals of Events model
+    # and updates related Users accordingly
+    related_users = Users.objects.filter(my_courses=instance.audience)
+    for user in related_users:
+        if user.my_events is not None and instance not in user.my_events.all():
+            user.my_events.add(instance)
+
+
 class Users(AbstractBaseUser, PermissionsMixin):
     groups = models.ManyToManyField(
         'auth.Group',
@@ -138,7 +173,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     background_imageUrl = models.ImageField(max_length=1000, blank=True, null=True)
     address = models.TextField()
     Program = models.CharField(max_length=255, blank=True, null=True)
-    my_courses = models.CharField(max_length=50, choices=AUDIENCE_CHOICES)
+    my_events = models.ForeignKey(Events, on_delete=models.CASCADE, blank=True, null=True)
     courses = models.ManyToManyField(Course, blank=True)  # Change ForeignKey to ManyToManyField
     Term = models.CharField(max_length=255, blank=True, null=True)
     school_credentials_two_imageId = models.CharField(max_length=255, blank=True, null=True)
@@ -146,6 +181,8 @@ class Users(AbstractBaseUser, PermissionsMixin):
     school_credentials_three_imageId = models.CharField(max_length=255, blank=True, null=True)
     school_credentials_three_imageUrl = models.CharField(max_length=1000, blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    sales_person_id = models.CharField(max_length=1000, blank=True, null=True)
+    my_courses = models.CharField(max_length=50, blank=True, null=True, choices=AUDIENCE_CHOICES)
     is_notification = models.BooleanField(default=False)
     no_of_notifications = models.IntegerField(default=0)
     is_accepted = models.BooleanField(default=False)
@@ -159,6 +196,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     isWebAdmin = models.BooleanField(default=False)
     is_teacher = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    is_email_confirmed = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
 
     
@@ -175,6 +213,14 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
     def has_module_perms(self, app_label):
         return self.is_superuser
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Find events matching the user's my_courses
+        matching_events = Events.objects.filter(audience=self.my_courses)
+        # Add user to associated_users field of matching events
+        for event in matching_events:
+            event.associated_users.add(self)
 
     def save(self, *args, **kwargs):
         # Generate emailfield based on first_name, last_name if it's null or empty
@@ -194,8 +240,8 @@ class EmailSubscription(models.Model):
 
 class Post(models.Model):
     _id = models.AutoField(primary_key=True, editable=False)
-    image =  models.ImageField(max_length=1000, blank=True, null=True)
-    caption = models.CharField(max_length=255, blank=True, null=True)
+    image =  models.ImageField(blank=True, null=True)
+    caption = models.CharField(max_length=10000, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Books(models.Model):
@@ -207,27 +253,4 @@ class Books(models.Model):
     
 from django.db import transaction
 
-class Events(models.Model):
-    title = models.CharField(max_length=100, verbose_name="Title for your event")
-    startingtime = models.CharField(max_length=120)
-    endtime = models.CharField(max_length=120)
-    description = models.TextField(blank=True, null=True)
-    startingday = models.DateField(blank=False, null=True)
-    endingday = models.DateField(blank=False, null=True)
-    audience = models.CharField(max_length=50, choices=AUDIENCE_CHOICES)
-    associated_users = models.ManyToManyField(Users, related_name='associated_events', blank=True)
 
-    def save(self, *args, **kwargs):
-        with transaction.atomic():
-            super().save(*args, **kwargs)
-            
-            # Get users based on audience and my_courses
-            users = Users.objects.filter(my_courses=self.audience)
-            # Add associated users to the event
-            self.associated_users.add(*users)
-
-            # Update is_notification and increment no_of_notifications for each user
-            for user in users:
-                user.is_notification = True
-                user.no_of_notifications += 1
-                user.save(update_fields=['is_notification', 'no_of_notifications'])

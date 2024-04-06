@@ -1,6 +1,6 @@
 
 import {INewStudentUser,IUpdatePassword, INewEvent, 
-  INewLoginUser, INewStaffUser, IUpdateCourse, IUpdateEvent, IStaffUser} from "@/types";
+  INewLoginUser, IUpdateEvent} from "@/types";
 
 
 const apiUrl = 'http://localhost:8000';
@@ -23,7 +23,7 @@ console.log('api',apiUrl)
       if (response.ok) {
         const data = await response.json();
         console.log(data)   
-        if (data && data.message === "User registered successfully") {
+        if (data && data.message === "User registered successfull") {
           return true; // Indicate success
         } else {
           throw new Error('Failed to register user');
@@ -440,7 +440,6 @@ export async function UpdateCourse(_id: string) {
 }
 
 
-
 export async function UpdateCourseDate(courses: {
   _id: string;
   Instructor: string;
@@ -451,43 +450,58 @@ export async function UpdateCourseDate(courses: {
   streamingtime: string;
   startingday: string;
   endingday: string;
-  file: File[];
+  file?: File[]; // Making file optional
 }): Promise<any> {
   try {
-    // Upload file as FormData
-    const formData: FormData | null = await uploadFile(courses.file[0]);
-    if (!formData) throw new Error('Failed to upload file');
-    if (courses.file.length > 0) {
+    let formData: FormData | null = null;
+
+    // Check if file is provided
+    if (courses.file && courses.file.length > 0) {
+      // Upload file as FormData
+      formData = await uploadFile(courses.file[0]);
+      if (!formData) throw new Error('Failed to upload file');
+
+      // Append file data
       const uploadedFile: File = courses.file[0];
       const fileFormDataName: string = `image`;
       formData.append(fileFormDataName, uploadedFile);
     }
+
     // Prepare data to send
-    formData.append('Instructor', courses.Instructor);
-    formData.append('title', courses.title);
-    formData.append('language', courses.language);
-    formData.append('content', courses.content);
-    formData.append('courseduration', courses.courseduration);
-    formData.append('streamingtime', courses.streamingtime);
-    formData.append('startingday', courses.startingday);
-    formData.append('endingday', courses.endingday);
-   
-    // Check if file is selected
-   
+    const requestData: any = {
+      Instructor: courses.Instructor,
+      title: courses.title,
+      language: courses.language,
+      content: courses.content,
+      courseduration: courses.courseduration,
+      streamingtime: courses.streamingtime,
+      startingday: courses.startingday,
+      endingday: courses.endingday,
+    };
+
+    // Check if formData exists, if not, initialize it
+    if (!formData) {
+      formData = new FormData();
+    }
+
+    // Append requestData to formData
+    Object.keys(requestData).forEach(key => {
+      formData!.append(key, requestData[key]);
+    });
+
     // Send POST request
-    const response = await axios.put(apiUrl+`/Account/api/edit/course/${courses._id}/`, formData, {
+    const response = await axios.put(apiUrl + `/Account/api/edit/course/${courses._id}/`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
 
-    return response.data; // Assuming the response contains the created course data
+    return response.data; // Assuming the response contains the updated course data
   } catch (error) {
-    console.log('err',error);
+    console.log('err', error);
     throw error; // Re-throw the error for handling elsewhere if needed
   }
 }
-
 
 
 
@@ -533,10 +547,12 @@ export async function createEvent(event: INewEvent) {
       startingday: event.startingday,  
       endingday: event.endingday,  
       audience: event.audience,
+      class_link: event.class_link,
+      class_password: event.class_password,
     };
 
     // Send POST request
-    const response = await axios.post(apiUrl+'/Account/api/register/events/$', updateeventData);
+    const response = await axios.post(apiUrl+'/Account/api/register/events/', updateeventData);
 
     return response.data; // Assuming the response contains the created course data
   } catch (error) {
@@ -560,6 +576,8 @@ export async function updateEvent(event:IUpdateEvent) {
       startingday: event.startingday,  
       endingday: event.endingday,  
       audience: event.audience,
+      class_link: event.class_link,
+      class_password: event.class_password,
     };
   
     // Send POST request
@@ -698,9 +716,41 @@ export async function getRecentUserCourses() {
   }
 }
 
+export async function getRecentSalesStudents() {
+  try {
+    const id = localStorage.getItem('id')
+    const response = await fetch(apiUrl+`/Account/api/student/sales/${id}/`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch courses');
+    }
+    const usercourse = await response.json();
+    console.log('usercourse', usercourse);
+    return usercourse;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 export async function getRecentEvents() {
   try {
     const response = await fetch(apiUrl+'/Account/api/register/events/');
+    if (!response.ok) {
+      throw new Error('Failed to fetch courses');
+    }
+    const events = await response.json();
+    console.log(events);
+    return events;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+export async function getRecentUserEvents() {
+  try {
+    const id = localStorage.getItem('id')
+    const response = await fetch(apiUrl+`/Account/api/student/event/${id}/`);
     if (!response.ok) {
       throw new Error('Failed to fetch courses');
     }
@@ -773,7 +823,7 @@ export async function getRecentProfiles() {
     }
     const profile = await response.json();
     // Assuming the response is an object with a 'profiles' property containing an array of profiles
-   
+    console.log('profile', profile)
     return profile;
   } catch (error) {
     console.error(error);

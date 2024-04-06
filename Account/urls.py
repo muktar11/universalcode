@@ -1,11 +1,12 @@
 # yourapp/urls.py
 from django.urls import path
 from .views import (
-       RegisterEmailView, CourseRegisterView, 
+       ConfirmRegistrationView, RegisterEmailView, CourseRegisterView, 
        EditCourseView,EditPostView,EditEventView,
         PostRegisterView, ResetPasswordView, 
         StudentCourseDetailView, RegisterSalesView,
-        BooksRegisterView,CourseFilter,
+        RetrieveSalesView,
+        BooksRegisterView, CourseFilter,StudentEventView,
 )
 from . import views 
 from rest_framework_simplejwt.views import (
@@ -22,6 +23,8 @@ urlpatterns = [
     path('api/register/sales', views.RegisterSalesView.as_view(), name='register-student'),
     path('api/register/books', views.BooksRegisterView.as_view(), name='register-student'),
     path('api/user/student/', views.StudentUserView.as_view(), name='register'),
+    path('confirm-registration/<str:uidb64>/<str:token>/', ConfirmRegistrationView.as_view(), name='confirm-registration'),
+
     path('api/user/staff/', views.StaffUserView.as_view(), name='register'),
     path('api/user/sales/', views.SalesUserView.as_view(), name='register'),
     path('api/course/filter/', views.CourseFilter.as_view(), name='register'),
@@ -29,7 +32,10 @@ urlpatterns = [
     path('api/register/email',  RegisterEmailView.as_view(), name='email-register'),
     path('api/register/course',  CourseRegisterView.as_view(), name='course-register'),
     path('api/edit/course/<int:pk>/', EditCourseView.as_view(), name='edit-course-register'),
-    
+    path('api/student/event/<int:pk>/', StudentEventView.as_view(), name="student-event-view"),
+    path('api/student/sales/<int:pk>/', RetrieveSalesView.as_view(), name="student-event-view"),
+
+
     path('api/edit/post/<int:pk>/', EditPostView.as_view(), name='edit-course-register'),
     path('api/edit/event/<int:pk>/', EditEventView.as_view(), name='edit-course-register'),
     path('api/students/course/<int:user_id>/<int:course_id>/', views.BuyCourseView.as_view(), name='buy-course'),

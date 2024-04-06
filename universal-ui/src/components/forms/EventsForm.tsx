@@ -37,7 +37,9 @@ const EventsForm = ({  event, action }: EventFormProps) => {
       description: event ?  event?.description : "",
       startingday: event ?  event?.startingday : "",
       endingday: event ? event?.endingday : "",
-      audience: event ? event?.audience : ""
+      audience: event ? event?.audience : "",
+      class_link: event ? event.class_link: "",
+      class_password:  event ? event.class_password: "",
     },
   });
 
@@ -55,6 +57,10 @@ const EventsForm = ({  event, action }: EventFormProps) => {
         startingday: value.startingday,
         endingday: value.endingday,
         audience: value.audience,
+        class_link: value.class_link,
+        class_password: value.class_password,
+        id: "",
+        no_of_notifications: ""
       };
 
       const CreateEvent = await createEvent(newEvent)
@@ -64,7 +70,7 @@ const EventsForm = ({  event, action }: EventFormProps) => {
           title: `post failed. Please try again.`,
         });
       }
-      navigate("/");
+      navigate("/event");
     };
     
 
@@ -138,7 +144,7 @@ const EventsForm = ({  event, action }: EventFormProps) => {
           name="startingday"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="shad-form_label">Starting Day </FormLabel>
+              <FormLabel className="shad-form_label">Starting Day (2024-03-01)</FormLabel>
               <FormControl>
               <Input type="text" className="shad-input" {...field} />
               </FormControl>
@@ -153,7 +159,7 @@ const EventsForm = ({  event, action }: EventFormProps) => {
           name="endingday"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="shad-form_label">Ending Day</FormLabel>
+              <FormLabel className="shad-form_label">Ending Day(2024-03-07)</FormLabel>
               <FormControl>
               <Input type="text" className="shad-input" {...field} />
               </FormControl>
@@ -167,7 +173,38 @@ const EventsForm = ({  event, action }: EventFormProps) => {
           name="audience"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="shad-form_label">Audience</FormLabel>
+              <FormLabel className="shad-form_label">Audience ID</FormLabel>
+              <FormControl>
+              <Input type="text" className="shad-input" {...field} />
+              </FormControl>
+              <FormMessage className="shad-form_message" />
+            </FormItem>
+          )}
+        />
+
+
+<FormField
+          control={form.control}
+          name="class_link"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="shad-form_label">Class Link</FormLabel>
+              <FormControl>
+              <Input type="text" className="shad-input" {...field} />
+              </FormControl>
+              <FormMessage className="shad-form_message" />
+            </FormItem>
+          )}
+        />
+
+     
+
+<FormField
+          control={form.control}
+          name="class_password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="shad-form_label">Class Password</FormLabel>
               <FormControl>
               <Input type="text" className="shad-input" {...field} />
               </FormControl>

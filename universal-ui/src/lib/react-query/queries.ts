@@ -21,12 +21,14 @@ import {
   publishBookAccount,
   getRecentUserCourses,
   getRecentEvents,
+  getRecentUserEvents,
   createUpdateProfilePic,
   createEvent,
   updateEvent,
   updateUserStudentAccount,
   UpdatePost,
   createUserSalesAccount,
+  getRecentSalesStudents,
   getRecentPosts,
   getRecentCourses,
   getRecentBooks,
@@ -35,12 +37,11 @@ import {
   updatePassword,
 } from "@/lib/appwrite/api";
 import { INewPost, INewCourse,INewStudentUser, INewLoginUser,
-    IUpdatePassword, IUpdateProfilePic,INewStaffUser, ISalesUser,
+    IUpdatePassword, IUpdateProfilePic, ISalesUser,
  INewEvent, 
  IUpdateCourse,
  IUpdateEvent,
  IStaffUser,
- IUpdateStudentUser,
  IPublishBookUser} from "@/types";
 import { useState } from "react";
 // ============================================================
@@ -232,6 +233,20 @@ export const useGetRecentUserCourses = () => {
   return useQuery({
     queryKey: [QUERY_KEYS.GET_RECENT_USER_COURSE],
     queryFn: getRecentUserCourses,
+  });
+};
+
+export const useGetRecentSalesStudents = () => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.GET_RECENT_USER_COURSE],
+    queryFn: getRecentSalesStudents,
+  });
+};
+
+export const useGetRecentUserEvents = () => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.GET_RECENT_USER_COURSE],
+    queryFn:  getRecentUserEvents,
   });
 };
 

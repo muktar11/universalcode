@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
+import  { useState } from "react";
 import { Models } from "appwrite";
 import { Button } from "../ui/button";
-import { Link } from "react-router-dom";
-import { useUpdateCourse, useUpdateCourseDate,
-   useDeleteCourseDate, usePurchseCourse } from "@/lib/react-query/queries";
+import {  useUpdateCourseDate,
+   useDeleteCourseDate } from "@/lib/react-query/queries";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import * as z from "zod";
-import {  INewCourse, IUpdateCourse} from "@/types";
+import {  IUpdateCourse} from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -126,12 +125,12 @@ const SingleCourseCard = ({ usercourse, course }: CourseCardProps) => {
             <div className="flex-center gap-2 text-light-3">
               <p className="subtle-semibold lg:small-regular ">
                 {" "}
-                {usercourse.title}
+                {usercourse?.title}
               </p>
             </div>
             <p className="subtle-semibold lg:small-regular">
               {" "}
-              CreatedBy {usercourse.Instructor}
+              CreatedBy {usercourse?.Instructor}
             </p>
           </div>
         </div>
@@ -139,31 +138,31 @@ const SingleCourseCard = ({ usercourse, course }: CourseCardProps) => {
 
       <div className="flex items-center gap-3">
         <img
-          src={usercourse.image || "/assets/icons/profile-placeholder.svg"}
+          src={usercourse?.image || "/assets/icons/profile-placeholder.svg"}
           alt="post image"
           className="post-card_img"
         />
       </div>
       <div className="flex items-center gap-3">
-        <p className="subtle-semibold lg:small-regular "> {usercourse.content}</p>
+        <p className="subtle-semibold lg:small-regular "> {usercourse?.content}</p>
       </div>
       <div className="flex items-center gap-3">
         <p className="subtle-semibold lg:small-regular ">
           {" "}
-          Language {usercourse.language}
+          Language {usercourse?.language}
         </p>
       </div>
       <div className="flex items-center gap-3">
         <p className="subtle-semibold lg:small-regular">
-          Course Starting Date {usercourse.startingday} Course Ending Date{" "}
-          {usercourse.endingday}
+          Course Starting Date {usercourse?.startingday} Course Ending Date{" "}
+          {usercourse?.endingday}
         </p>
       </div>
 
       <div className="flex items-center gap-3">
         <p className="subtle-semibold lg:small-regular">
-          Course Duration {usercourse.courseduration} Class Starting Time{" "}
-          {usercourse.streamingtime}
+          Course Duration {usercourse?.courseduration} Class Starting Time{" "}
+          {usercourse?.streamingtime}
         </p>
       </div>
 

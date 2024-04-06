@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation,  useNavigate  } from "react-router-dom";
 import { bottombarLinks } from "@/constants";
 import { AiOutlineSearch } from 'react-icons/ai';
 import axios from "axios";
+import { useSignOutAccount } from "@/lib/react-query/queries";
+import { Button } from "@/components/ui/button";
 
 interface Course {
   _id: string;
@@ -14,66 +16,85 @@ interface Props {
   onSearch: (data: any) => void; // Define the type of onSearch as a function that accepts any data and returns void
 }
 
-const TopNavbar: React.FC<Props> = ({ onSearch }) => {
-  const { pathname } = useLocation();
-  const isStudent = localStorage.getItem("is_student") === "true";
-  const isSales = localStorage.getItem("is_sales") === "true";
-  const isTeacher = localStorage.getItem("is_teacher") === "true";
-  const isWebAdmin = localStorage.getItem("isWebAdmin") === "true";
 
-  // Filter links based on user privileges
-  const filteredLinks = bottombarLinks.filter((link) => {
-    if (isTeacher) {
-      return link.label === "Notifications" || link.label === "Logout";
-    } else if (isStudent || isSales) {
-      return link.label === "Notifications" || link.label === "Logout";
-    } else if (isWebAdmin) {
-      return link.label === "Create Post" || link.label === "Publish Books" || link.label === "Create Course" || link.label === "Create Event" || link.label === "Create Staff" || link.label === "Create Sales";
-    }
-    return true; // Return true for other cases
-  });
-
-  // Filtered links with label and imgUrl from local storage
-  const filteredLinksLocalStorage = filteredLinks.map((link) => {
-    // Here you can customize the imgUrl based on your requirements
-    let imgUrl = localStorage.getItem(`${link.label}_imgUrl`);
-    // If imgUrl is not stored in local storage, fallback to the link's original imgUrl
-    if (!imgUrl) {
-      imgUrl = link.imgURL;
-    }
-    return { ...link, imgUrl };
-  });
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Course[]>([]); // State to hold search results
-  const searchRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setSearchResults([]); // Clear search results if clicked outside the search component
+const Navbar: React.FC<Props> = ({ onSearch }) => {
+ 
+    const isStudent = localStorage.getItem("is_student") === "true";
+    const isSales = localStorage.getItem("is_sales") === "true";
+    const isTeacher = localStorage.getItem("is_teacher") === "true";
+    const isWebAdmin = localStorage.getItem("isWebAdmin") === "true";
+  
+    // Filter links based on user privileges
+    const filteredLinks = bottombarLinks.filter((link) => {
+      if (isTeacher) {
+        return link.label === "Notifications";
+      } else if (isStudent || isSales) {
+        return link.label === "Notifications" ;
+      } else if (isWebAdmin) {
+        return link.label === "Create Post" || link.label === "Publish Books" || link.label === "Create Course" 
+        || link.label === "Create Event" || link.label === "Create Staff" || link.label === "Create Sales" ||
+        link.label === "Notifications" || link.label === "Logout";
+      }
+      return true; // Return true for other cases
+    });
+  
+    // Filtered links with label and imgUrl from local storage
+    const filteredLinksLocalStorage = filteredLinks.map((link) => {
+      // Here you can customize the imgUrl based on your requirements
+      let imgUrl = localStorage.getItem(`${link.label}_imgUrl`);
+      // If imgUrl is not stored in local storage, fallback to the link's original imgUrl
+      if (!imgUrl) {
+        imgUrl = link.imgURL;
+      }
+      return { ...link, imgUrl };
+    });
+  
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<Course[]>([]); // State to hold search results
+    const searchRef = useRef<HTMLDivElement | null>(null);
+  
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+          setSearchResults([]); // Clear search results if clicked outside the search component
+        }
+      };
+  
+      document.body.addEventListener('click', handleClickOutside);
+  
+      return () => {
+        document.body.removeEventListener('click', handleClickOutside);
+      };
+    }, []);
+  
+    const handleSearch = async (e: React.FormEvent) => {
+      e.preventDefault(); // Prevent the default form submission behavior
+      try {
+        const response = await axios.get(`http://127.0.0.1:8000/Account/api/course/filter/?search=${searchQuery}`);
+        setSearchResults(response.data); // Update searchResults state with fetched data
+  
+        // Call onSearch prop with searchResults data
+        onSearch(response.data);
+      } catch (error) {
+        console.error("Error fetching search results:", error);
       }
     };
-
-    document.body.addEventListener('click', handleClickOutside);
-
-    return () => {
-      document.body.removeEventListener('click', handleClickOutside);
+  
+    const navigate = useNavigate();
+    const { pathname } = useLocation();
+    const signOutMutation = useSignOutAccount();
+    const handleLogout = async () => {
+      try {
+        await signOutMutation.mutateAsync();
+        navigate('/sign-in');
+      } catch (error) {
+        // Handle logout error if needed
+      }
     };
-  }, []);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent the default form submission behavior
-    try {
-      const response = await axios.get(`http://127.0.0.1:8000/Account/api/course/filter/?search=${searchQuery}`);
-      setSearchResults(response.data); // Update searchResults state with fetched data
-    } catch (error) {
-      console.error("Error fetching search results:", error);
-    }
-  };
-
+  
+ 
   return (
-    <nav className="top-navbar hidden md:flex justify-between items-center bg-gray-800 p-4">
+    <nav className="top-navbar  md:flex justify-between items-center bg-gray-800 p-4">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Link to="/" className="text-white text-lg font-semibold">
           Universal
@@ -116,14 +137,25 @@ const TopNavbar: React.FC<Props> = ({ onSearch }) => {
         style={{ display: "flex", flexDirection: "column", alignItems: "center" }} // Align items top to bottom
       >
         <img src={link.imgUrl} alt={link.label} className="w-6 h-6 mr-1" style={{ display: "block" }} />
-        <span>{link.label}</span>
+      
       </Link>
     );
   })}
+<Button
+  variant="ghost"
+  className="shad-button_ghost"
+  onClick={handleLogout}
+  style={{ display: "flex", flexDirection: "column", alignItems: "center" }} 
+>
+  <img  className="w-6 h-6 mr-1"  src="/assets/icons/logout.svg" alt="logout" />
+ 
+</Button>
+
 </div>
+
 
     </nav>
   );
 };
 
-export default TopNavbar;
+export default Navbar;

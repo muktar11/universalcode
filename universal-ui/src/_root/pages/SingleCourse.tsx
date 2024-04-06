@@ -1,7 +1,4 @@
-import React from "react";
-import { Models } from "appwrite";
 import { Loader, SingleCourseCard } from "@/components/shared";
-import { useUpdateCourse } from "@/lib/react-query/queries";
 import { useParams } from "react-router-dom";
 import { UpdateCourse } from "@/lib/appwrite/api";
 import { useQuery } from "@tanstack/react-query";
@@ -24,7 +21,7 @@ const SingleCourse = () => {
           ) : (
             <ul className="flex flex-col flex-1 gap-9 w-full">
               {updatecourse ? (
-                <SingleCourseCard usercourse={updatecourse} action={"Create"} />
+               <SingleCourseCard usercourse={updatecourse.usercourse} course={updatecourse.course} action={"Create"} />
               ) : (
                 <p>No course found</p>
               )}

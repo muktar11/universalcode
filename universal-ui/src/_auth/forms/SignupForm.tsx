@@ -23,6 +23,7 @@ const SignupForm = () => {
     defaultValues: {
       first_name: "",
       last_name: "",
+      sales_person_id: "",
       email: "",
       gender:"",
       phone:"",
@@ -39,18 +40,19 @@ const SignupForm = () => {
       const createUser: INewStudentUser = {
         first_name: user.first_name,
         last_name: user.last_name,
-        email: user.email, 
+        email: user.email,
         phone: user.phone,
         address: user.address,
         password: user.password,
-        password2: user.password2
+        password2: user.password2,
+        sales_person_id: user.sales_person_id,
       };
   
       const registrationSuccessful = await createUserAccount(createUser);
   
       if (registrationSuccessful) {
         // If registration is successful, redirect to the sign-in page
-        toast({ title: "Registration Successful. Please sign in." });
+        toast({ title: "Registration Successful. Please check your email." });
         navigate("/sign-in");
       } else {
         // If registration is not successful, show an error message
@@ -98,6 +100,20 @@ const SignupForm = () => {
     render={({ field }) => (
       <FormItem>
         <FormLabel className="shad-form_label">Last Name</FormLabel>
+        <FormControl>
+          <Input type="text" className="shad-input" {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+
+<FormField
+    control={form.control}
+    name="sales_person_id"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel className="shad-form_label">SPID</FormLabel>
         <FormControl>
           <Input type="text" className="shad-input" {...field} />
         </FormControl>

@@ -22,7 +22,7 @@ const ThirdForm = () => {
     try{
     const accessTokenData = localStorage.getItem('accessToken');
     const token = accessTokenData ? JSON.parse(accessTokenData).token : null;
-    const response = await fetch("http://165.22.216.109/Account/reset-password/", {
+    const response = await fetch("http://138.68.190.39/Account/reset-password/", {
       method: "POST",
       headers: {
         'Authorization': `Bearer ${token}`,

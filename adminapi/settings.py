@@ -37,7 +37,7 @@ DEBUG = True
 
 
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://138.68.190.39', 'ef19-196-189-29-108.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://138.68.190.39',  '138.68.190.39', 'ef19-196-189-29-108.ngrok-free.app']
 
 
 

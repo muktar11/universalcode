@@ -2,7 +2,7 @@
 import {INewStudentUser,IUpdatePassword, INewEvent, 
   INewLoginUser, } from "@/types";
 
-const apiUrl = 'http://localhost:8000';
+const apiUrl = 'http://138.68.190.39';
 console.log('api',apiUrl)
 import axios from 'axios';
 

@@ -12,7 +12,7 @@ const Searchbar: React.FC<Props> = ({ onSearch }) => {
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault(); // Prevent the default form submission behavior
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/Account/api/course/filter/?search=${searchQuery}`);
+            const response = await axios.get(`http://138.68.190.39/Account/api/course/filter/?search=${searchQuery}`);
             onSearch(response.data); // Pass the fetched data to the parent component
         } catch (error) {
             console.error("Error fetching search results:", error);

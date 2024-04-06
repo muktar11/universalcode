@@ -37,7 +37,7 @@ DEBUG = True
 
 
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost', 'ef19-196-189-29-108.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://138.68.190.39', 'ef19-196-189-29-108.ngrok-free.app']
 
 
 
@@ -46,7 +46,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000', 'http://192.168.100.16:3000', "http://165.22.216.109", "http://localhost:5173", 
     "http://192.168.100.156:8081", 'http://0.0.0.0:8000',  'http://192.168.100.156',   'http://196.188.169.145',
-    'http://192.168.1.4', "http://192.168.1.4:8000"
+    'http://192.168.1.4', "http://192.168.1.4:8000", "http://138.68.190.39"
 ]
 
 CORS_ALLOW_CREDENTIALS = True

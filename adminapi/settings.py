@@ -30,21 +30,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-m$%0yge@44f7j8&np8$1vi@-t783-jpmzlv^lkq6)c+me-#*@b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 
 
 
 
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://138.68.190.39', "http://universalonlineuniversity.org", "universalonlineuniversity.org", '138.68.190.39', 'ef19-196-189-29-108.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://138.68.190.39', "http://universalonlineuniversity.org", "www.universalonlineuniversity.org", "universalonlineuniversity.org", '138.68.190.39', 'ef19-196-189-29-108.ngrok-free.app']
 
 
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000', 'http://192.168.100.16:3000', "http://universalonlineuniversity.org", "http://165.22.216.109", "http://localhost:5173", 
+    'http://localhost:3000', 'http://192.168.100.16:3000', "http://universalonlineuniversity.org","www.universalonlineuniversity.org", "http://165.22.216.109", "http://localhost:5173", 
     "http://192.168.100.156:8081", 'http://0.0.0.0:8000',  'http://192.168.100.156',  'http://196.188.169.145',
     'http://192.168.1.4', "http://192.168.1.4:8000", "http://138.68.190.39"
 ]

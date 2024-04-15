@@ -203,7 +203,7 @@ class RegisterStudentSerializer(serializers.ModelSerializer):
         subject = 'Registration Confirmation'
         confirmation_link = reverse_lazy('confirm-registration', kwargs={'uidb64': uid, 'token': token})
         confirmation_url = f'{settings.BASE_URL}{confirmation_link}'
-        message = f'Dear {user.first_name},\n\nThank you for registering to Universal University we are pleased you have joined \n\n please view your site to obtain your course and grow as a person and agin we are pleased you have decied to join us.'
+        message = f'Dear {user.first_name} {user.last_name},\n\nThank you for registering to Universal Online University. \n\n You have already expressed interest in UOU, which means you aren not looking for an ordinary college experience. With academic centers around the Web, our network extends far beyond the vibrant community. We wish to foster an alumni who will serve the world more prestigious organizations. please view your site to obtain your course and grow as a person and gain we are pleased you have decided to join us.'
         from_email = 'universal.edu@example.com'  # Your email address
         to_email = user.email
         send_mail(subject, message, from_email, [to_email])

@@ -38,7 +38,7 @@ DEBUG = False
 
 
 ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://138.68.190.39', 'https://0cf0-196-189-29-233.ngrok-free.app', 
-                 "http://universalonlineuniversity.org",  '138.68.190.39', '0cf0-196-189-29-233.ngrok-free.app']
+                 "http://universalonlineuniversity.org", "universalonlineuniversity.org",  '138.68.190.39', '0cf0-196-189-29-233.ngrok-free.app']
 
 
 

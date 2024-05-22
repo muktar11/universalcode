@@ -8,6 +8,11 @@ USER_TYPE = (("HOD", "HOD"), ( "Staff", "Staff"), ("Student", "Student"))
 GENDER = [("M", "Male"), ("F", "Female")]
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.validators import FileExtensionValidator
+from cloudinary.models import CloudinaryField
+from cloudinary_storage.storage import VideoMediaCloudinaryStorage
+from cloudinary_storage.validators import validate_video 
+
 PROGRAM = (("All", "All"), ("BL", "BL"),("BE", "BE"),("BP", "BP"), ("BCS", "BCS"))
 AUDIENCE_CHOICES = [
     ("WebDesign", "WebDesign"),
@@ -72,6 +77,13 @@ def course_file_path(instance, filename):
     # Return the file path
     return os.path.join('uploads', 'course', filename)
 
+def coupon_file_path(instance, filename):
+    # Get the file extension
+    ext = filename.split('.')[-1]
+    # Generate a new filename
+    filename = f'{instance._id}.{ext}'
+    # Return the file path
+    return os.path.join('uploads', 'coupon', filename)
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -103,13 +115,77 @@ class Course(models.Model):
     streamingtime = models.CharField(max_length=255, blank=True, null=True)
     startingday = models.CharField(max_length=255, blank=True, null=True)
     endingday = models.CharField(max_length=255, blank=True, null=True)
-    image =  models.FileField(upload_to=course_file_path, null=True, blank=True)
+    image =  models.ImageField(upload_to='post/image', blank=True, null=True)
+    price = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 
+'''
+{ "MerchantRequestID":"1c5b-4ba8-815c-ac45c57a3db0284908",
+  "CheckoutRequestID":"ws_CO_03052024110555066740408496",
+    "ResponseCode": "0",
+      "ResponseDescription":"Success. Request accepted for processing",
+  "CustomerMessage":"Success. Request accepted for processing" }
+'''
+
+class CoursePurchaseRequest(models.Model):
+    _id = models.AutoField(primary_key=True, editable=False)
+    client_id = models.CharField(max_length=255, blank=True, null=True)
+    course_id = models.CharField(max_length=255, blank=True, null=True)
+    phone = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.IntegerField(blank=True, null=True)  # Changed to IntegerField 
+    MerchantRequestID = models.CharField(max_length=255, blank=True, null=True) 
+    CheckoutRequestID = models.CharField(max_length=255, blank=True, null=True) 
+    ResponseCode = models.CharField(max_length=255, blank=True, null=True) 
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_approved = models.BooleanField(default=False)
+    def __str__(self):
+        return f"{self.client_id} request to buy course {self.course_id} with {self.phone}" 
+
+ 
+class LNMOnline(models.Model):
+    CheckoutRequestID = models.CharField(max_length=50, blank=True, null=True)
+    MerchantRequestID = models.CharField(max_length=20, blank=True, null=True)
+    ResultCode = models.IntegerField(blank=True, null=True)
+    ResultDesc = models.CharField(max_length=120, blank=True, null=True)
+    Amount = models.FloatField(blank=True, null=True)
+    MpesaReceiptNumber = models.CharField(max_length=15, blank=True, null=True)
+    Balance = models.CharField(max_length=12, blank=True, null=True)
+    TransactionDate = models.DateTimeField(blank=True, null=True)
+    PhoneNumber = models.CharField(max_length=13, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.PhoneNumber} has sent {self.Amount} >> {self.MpesaReceiptNumber}"
+from django.contrib.postgres.fields import ArrayField
+
+class CouponPurchase(models.Model):
+    _id = models.AutoField(primary_key=True, editable=False)
+    coupon_code = models.CharField(max_length=255, blank=True, null=True)
+    course_id = models.CharField(max_length=255, blank=True, null=True)
+    institution = models.CharField(max_length=255, blank=True, null=True)
+    contact_email = models.EmailField(max_length=255, blank=True, null=True)
+    payment_receipt= models.FileField(blank=True, null=True,  upload_to=coupon_file_path)
+    no_of_coupon = models.IntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+  
+
+class CoursePurchaseCoupon(models.Model):
+    _id = models.AutoField(primary_key=True, editable=False)
+    coupon_code = models.CharField(max_length=255, blank=True, null=True)
+    course_id = models.CharField(max_length=255, blank=True, null=True)
+    student_id = models.CharField(max_length=255, blank=True, null=True)
+
+
+class studentpurchasedcourses(models.Model):
+    _id = models.AutoField(primary_key=True, editable=False)
+    student_id = models.CharField(max_length=255, blank=True, null=True)
+    course_id = models.CharField(max_length=255, blank=True, null=True)
+
 class Events(models.Model):
     _id = models.AutoField(primary_key=True, editable=False)
+    course_id = models.CharField(max_length=255, blank=True, null=True)
     title = models.CharField(max_length=100, verbose_name="Title for your event")
     startingtime = models.CharField(max_length=120)
     endtime = models.CharField(max_length=120)
@@ -121,22 +197,9 @@ class Events(models.Model):
     audience = models.CharField(max_length=50, choices=AUDIENCE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Update related users based on audience
-        related_users = Users.objects.filter(my_courses=self.audience)
-        for user in related_users:
-            if user.my_events is not None and self not in user.my_events.all():
-                user.my_events.add(self)
+    
 
-@receiver(post_save, sender=Events)
-def update_users_on_event_save(sender, instance, **kwargs):
-    # This function listens to post_save signals of Events model
-    # and updates related Users accordingly
-    related_users = Users.objects.filter(my_courses=instance.audience)
-    for user in related_users:
-        if user.my_events is not None and instance not in user.my_events.all():
-            user.my_events.add(instance)
+
 
 
 class Users(AbstractBaseUser, PermissionsMixin):
@@ -233,6 +296,20 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
 
 
+class Video(models.Model):
+    _id = models.AutoField(primary_key=True, editable=False)
+    course_id = models.CharField(max_length=255, blank=True, null=True)
+    description = models.CharField(max_length=1024)
+    file = models.FileField(upload_to='videos/', blank=True, storage=VideoMediaCloudinaryStorage(),
+                              validators=[validate_video])
+    image = models.ImageField(upload_to='images/thumbnail', blank=True)  
+    caption = models.CharField(max_length=255, blank=True, null=True)
+    audience = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class meta:
+        ordering = ['title']
+
 class EmailSubscription(models.Model):
     _id = models.AutoField(primary_key=True, editable=False)
     email = models.EmailField(max_length=255, blank=True, null=True)
@@ -246,6 +323,7 @@ class Post(models.Model):
 
 class Books(models.Model):
     _id = models.AutoField(primary_key=True, editable=False)
+    course_id = models.CharField(max_length=255, blank=True, null=True)
     Book_imageUrl = models.FileField(max_length=1000, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     caption = models.CharField(max_length=255, blank=True, null=True)

@@ -2,7 +2,7 @@ from audioop import reverse
 from base64 import urlsafe_b64encode
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models  import Books, EmailSubscription, Course, Post, Events, Users 
+from .models import Books, CouponPurchase, CoursePurchaseCoupon, CoursePurchaseRequest, Video,  EmailSubscription, Course, LNMOnline, CoursePurchaseRequest, Post, Events, Users 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model 
@@ -170,6 +170,76 @@ class RegisterStudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
+        fields = ('id', 'first_name', 'last_name', 'email', 'phone', 'address', 'password', 'password2', 'sales_person_id')
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        return attrs
+
+    def create(self, validated_data):
+        user = Users.objects.create(
+            email=validated_data['email'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            phone=validated_data['phone'], 
+            address=validated_data['address'],  
+            sales_person_id=validated_data['sales_person_id']    
+        ) 
+        user.set_password(validated_data['password'])
+        user.is_student = True
+        user.is_active = True  # Deactivate the user until they confirm registration
+        user.save()
+
+        return user
+'''
+        # Generate unique token for email confirmation
+        token_generator = default_token_generator
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = token_generator.make_token(user)
+
+        # Sending confirmation email with confirmation link
+        subject = 'Registration Confirmation'
+        confirmation_link = reverse_lazy('confirm-registration', kwargs={'uidb64': uid, 'token': token})
+        confirmation_url = f'{settings.BASE_URL}{confirmation_link}'
+        message = f'Dear {user.first_name} {user.last_name},\n\nThank you for registering to Universal Online University. \n\n You have already expressed interest in UOU, which means you aren not looking for an ordinary college experience. With academic centers around the Web, our network extends far beyond the vibrant community. We wish to foster an alumni who will serve the world more prestigious organizations. please view your site to obtain your course and grow as a person and gain we are pleased you have decided to join us.'
+        from_email = 'universal.edu@example.com'  # Your email address
+        to_email = user.email
+        send_mail(subject, message, from_email, [to_email])
+
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
+
+        # Return tokens along with user data
+        return {
+            'refresh': str(refresh),
+            'access': str(access),
+            'user': user
+        }
+
+    @staticmethod
+    def confirm_registration(uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64)
+            user = Users.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, Users.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.is_email_confirmed = True
+            user.is_active = True
+            user.save()
+            return user
+        else:
+            return None 
+'''
+class RegisterStudentSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = Users
         fields = '__all__'
 
     def validate(self, attrs):
@@ -236,7 +306,6 @@ class RegisterStudentSerializer(serializers.ModelSerializer):
             return None 
 
 
-
 class UsersSerializer(serializers.ModelSerializer):
     no_of_notifications = serializers.IntegerField()
 
@@ -267,17 +336,168 @@ class EmailSubscriptionSerializer(serializers.ModelSerializer):
         model = EmailSubscription
         fields = ('__all__')
 
+class CoursePurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CoursePurchaseRequest
+        fields = ('_id', 'Instructor', 'title', 'language', 'content', 'courseduration', 'streamingtime', 'startingday', 'endingday', 'image', 'price', 'created_at')
 
+
+class CoursePurchaseRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CoursePurchaseRequest
+        fields =  ('__all__')
+        
+class CouponPurchaseCouponSerializer(serializers.ModelSerializer):
+    student_first_name = serializers.SerializerMethodField()
+    student_last_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CoursePurchaseCoupon
+        fields = ('_id', 'coupon_code', 'student_id', 'course_id', 'student_first_name', 'student_last_name')
+
+    def get_student_first_name(self, obj):
+        try:
+            student = Users.objects.get(id=obj.student_id)
+            return student.first_name
+        except Users.DoesNotExist:
+            return None
+
+    def get_student_last_name(self, obj):
+        try:
+            student = Users.objects.get(id=obj.student_id)
+            return student.last_name
+        except Users.DoesNotExist:
+            return None
+
+class StudentPurchasedCoursesSerializer(serializers.ModelSerializer):
+    student_first_name = serializers.SerializerMethodField()
+    student_last_name = serializers.SerializerMethodField()
+    course_Instructor = serializers.SerializerMethodField()
+    course_title = serializers.SerializerMethodField()
+    course_language = serializers.SerializerMethodField()
+    course_content = serializers.SerializerMethodField()
+    course_courseduration = serializers.SerializerMethodField()
+    course_streamingtime = serializers.SerializerMethodField()
+    course_startingday = serializers.SerializerMethodField()
+    course_endingday = serializers.SerializerMethodField()
+    course_image = serializers.SerializerMethodField()
+
+    class Meta: 
+        model = CoursePurchaseCoupon
+        fields = ('_id', 'student_id', 'course_id', 'course_Instructor', 'course_title',
+                  'course_language', 'course_content', 'course_courseduration', 
+                  'course_streamingtime', 'course_startingday', 'course_endingday', 
+                  'course_image', 'student_first_name', 'student_last_name')
+
+    def get_student_first_name(self, obj):
+        try:
+            student = Users.objects.get(id=obj.student_id)
+            return student.first_name
+        except Users.DoesNotExist:
+            return None    
+    
+    def get_student_last_name(self, obj):
+        try:
+            student = Users.objects.get(id=obj.student_id)
+            return student.last_name
+        except Users.DoesNotExist:
+            return None
+        
+    def get_course_Instructor(self, obj):
+        try:
+            course = Course.objects.get(_id=obj.course_id)
+            return course.Instructor
+        except Course.DoesNotExist:
+            return None
+
+    def get_course_title(self, obj):
+        try:
+            course = Course.objects.get(id=obj.course_id)
+            return course.title
+        except Course.DoesNotExist:
+            return None
+
+    def get_course_language(self, obj):
+        try:
+            course = Course.objects.get(id=obj.course_id)
+            return course.language
+        except Course.DoesNotExist:
+            return None
+
+    def get_course_content(self, obj):
+        try:
+            course = Course.objects.get(id=obj.course_id)
+            return course.content
+        except Course.DoesNotExist:
+            return None
+
+    def get_course_courseduration(self, obj):
+        try:
+            course = Course.objects.get(id=obj.course_id)
+            return course.courseduration
+        except Course.DoesNotExist:
+            return None  
+
+    def get_course_streamingtime(self, obj):
+        try:
+            course = Course.objects.get(id=obj.course_id)
+            return course.streamingtime
+        except Course.DoesNotExist:
+            return None  
+
+    def get_course_startingday(self, obj):
+        try:
+            course = Course.objects.get(id=obj.course_id)
+            return course.startingday
+        except Course.DoesNotExist:
+            return None  
+
+    def get_course_endingday(self, obj):
+        try:
+            course = Course.objects.get(id=obj.course_id)
+            return course.endingday
+        except Course.DoesNotExist:
+            return None  
+
+    def get_course_image(self, obj):
+        try:
+            course = Course.objects.get(id=obj.course_id)
+            return course.image 
+        except Course.DoesNotExist:
+            return None
+
+
+class LNMOnlineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LNMOnline
+        fields = ("id",)
+
+
+
+class CouponPurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CouponPurchase  # Define the model attribute correctly
+        fields = ('__all__')  # Use '__all__' to include all fields from the model
+        
 class PostSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Post
-        fields = ('__all__')
+        fields =  ('__all__')
 
-
+import cloudinary.uploader
 class BooksSerializer(serializers.ModelSerializer):
     class Meta:
         model = Books 
-        fields = ('__all__')
+        fields =  ('__all__')
+
+
+
+class VideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Video
+        fields = ('_id', 'course_id', 'description', 'file', 'image', 'caption', 'audience', 'created_at')
+        
+     
 class CourseSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Course
@@ -289,7 +509,7 @@ class EventsSerializer(serializers.ModelSerializer):
         model = Events
         fields = '__all__'
 
-    
+     
 
 class StudentProfileSerializer(serializers.ModelSerializer):
     no_of_notifications = serializers.IntegerField()
@@ -318,21 +538,28 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 
 
 class StudentEventSerializer(serializers.ModelSerializer):
-    no_of_notifications = serializers.IntegerField()
-    my_events = serializers.SerializerMethodField()
-  
+    student_event_title = serializers.SerializerMethodField()
+    student_event_startingtime = serializers.SerializerMethodField()
+    student_event_endtime = serializers.SerializerMethodField()
+    student_event_description = serializers.SerializerMethodField()
+    student_event_class_link = serializers.SerializerMethodField()
+    student_event_class_password = serializers.SerializerMethodField()
+    student_event_startingday = serializers.SerializerMethodField()
+    student_event_endingday = serializers.SerializerMethodField()
+    student_event_audience = serializers.SerializerMethodField()
+    student_event_created_at = serializers.SerializerMethodField()
     class Meta:
-        model = Users 
-        fields =  ['id', 'no_of_notifications', 'my_events']
-
-    def get_my_events(self, obj):
-        # Retrieve events associated with the user's courses
-        my_courses = obj.my_courses
-        if my_courses:
-            return Events.objects.filter(audience=my_courses).values('id', 'title', 'startingtime', 'endtime', 'description', 'class_link', 'class_password',
-                                                                      'startingday', 'endingday', 'audience', 'created_at').order_by('-created_at')
-        else:
-            return []  # Return an empty list if no courses are associated
+        model = Events 
+        fields =['id', 'title', 'startingtime', 'endtime', 'description', 'class_link', 'class_password',
+            'startingday', 'endingday', 'audience', 'created_at']
+        
+    def get_student_event_title(self, obj):
+        try:
+            events = Events.objects.get(id=obj.student_id)
+            return events.title
+        except Users.DoesNotExist:
+            return None    
+        
 
 
 class StudentProfileUpdateSerializer(serializers.ModelSerializer):
@@ -372,4 +599,3 @@ class StudentCourseSerializer(serializers.ModelSerializer):
         if image:
             return request.build_absolute_uri(image.url)
         return None
-

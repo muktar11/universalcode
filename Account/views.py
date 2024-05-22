@@ -7,18 +7,27 @@ from requests import request
 
 # Create your views here.
 from rest_framework import status
+from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import AllowAny
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import (
-    Users, EmailSubscription,
-Course, Post, Events,Books, )
+    CouponPurchase, CoursePurchaseCoupon, 
+    CoursePurchaseCoupon, Users,
+    EmailSubscription, LNMOnline,
+Course, Post, Video, CoursePurchaseRequest, Events,Books, studentpurchasedcourses, )
 from .serializers import (
-    MyTokenObtainPairSerializer, RegisterSalesSerializer,
+    CouponPurchaseCouponSerializer, CouponPurchaseSerializer, CoursePurchaseRequestSerializer, 
+    CoursePurchaseSerializer, MyTokenObtainPairSerializer, 
+    RegisterSalesSerializer, LNMOnlineSerializer,
     RegisterStaffSerializer, StudentProfileUpdateSerializer,
     EmailSubscriptionSerializer, RegisterStudentSerializer,
-   StudentCourseSerializer, CourseSerializer, PostSerializer, EventsSerializer,
-    StudentProfileSerializer, 
-    ResetPasswordSerializer, UsersSerializer, BooksSerializer, StudentEventSerializer,
+    StudentCourseSerializer, CourseSerializer, PostSerializer,
+    EventsSerializer,
+    StudentProfileSerializer, VideoSerializer,
+    StudentPurchasedCoursesSerializer, ResetPasswordSerializer,
+    UsersSerializer, BooksSerializer, StudentEventSerializer,
 )
 from .permissions import (IsSalesOrReadOnly, IsStudentOrReadOnly, IsWebAdminOrReadOnly, IsTeacherOrReadOnly)
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -31,6 +40,9 @@ from django.db.models import Q
 from django.core.exceptions import FieldDoesNotExist
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+import cloudinary
+from cloudinary.uploader import upload
+
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -70,15 +82,13 @@ class RegisterStudentView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]  # Require authentication for retrieving course data
-        elif self.request.method in ['PUT', 'POST', 'DELETE']:
+        elif self.request.method in ['PUT', 'POST']:
             return [AllowAny()]  # Only allow teachers to register
         else:
             return super().get_permissions()   
         
     def post(self, request):
         serializer = RegisterStudentSerializer(data=request.data) 
-        phone_number = request.data.get('phone', '')  # Get the phone number from the request data
-        print("Phone Number:", phone_number)  # Print the phone number
         if serializer.is_valid():
             user_data = serializer.save()
             user = user_data['user']  # Get the user instance
@@ -92,10 +102,14 @@ class RegisterStudentView(APIView):
                 "is_teacher": user.is_teacher,
                 "isWebAdmin": user.isWebAdmin
             }
+            user_data = serializer
             return Response(response_data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
+
+
+
 
 
 class ConfirmRegistrationView(View):
@@ -170,7 +184,9 @@ class RegisterSalesView(APIView):
         else:
             print(serializer.errors) 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
+
+ 
 from django.core.exceptions import MultipleObjectsReturned
 class RetrieveSalesView(APIView):
     def get_permissions(self):
@@ -216,6 +232,160 @@ class RegisterEmailView(APIView):
             return Response({"message": "Registration successful"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+'''
+import base64
+import requests
+from datetime import datetime
+from django.http import JsonResponse
+import json 
+
+def get_access_token():
+    secret = "zxbwLuBaQvRPQEo5WE7JyqiUeWQHYGWxyDi1Qv650hspWw04a0V3l6ISLiAdzfCj"
+    consumer = "GtaxyQq50AJVSFQspjqVP96dR8p6rfRGGGkxnLOPPoBZ3gkS" 
+    auth = (consumer, secret)
+    headers = {'Content-Type': 'application/json'}
+    access_token_url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
+    try:
+        response = requests.get(access_token_url, headers=headers, auth=auth)
+        response.raise_for_status()  # Raise exception for non-2xx status codes
+        result = response.json()
+        access_token = result['access_token']
+        print(access_token)
+
+        return access_token
+    except requests.exceptions.RequestException as e:
+        return str(e)
+
+'''
+
+
+'''
+'''
+'''
+from django_daraja.mpesa.core import MpesaClient
+
+class stk_push(APIView):
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]  # Only allow authenticated users to make POST requests
+        else:
+            return super().get_permissions()
+    def post(self, request):
+        self.check_permissions(request)
+        serializer = CoursePurchaseSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            phone = data.get("phone")
+            amount = data.get("amount")
+            client_id = data.get("client_id")
+            course_id = data.get("course_id")            
+            # Check if the purchase already exists
+            existing_purchase = CoursePurchaseRequest.objects.filter(course_id=course_id, client_id=client_id).exists()
+            if existing_purchase:
+                print('You already bought this course')
+                return Response({"error": "You have already bought this course."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # If the purchase does not exist, proceed with STK push
+            else:
+                # Assuming phone is formatted as '2547xxxxxxxx'
+                cl = MpesaClient()
+                phone = phone[1:]  
+                account_reference = 'reference'
+                transaction_desc = 'Description'
+                callback_url = 'https://darajambili.herokuapp.com/express-payment';
+                response = cl.stk_push(phone, amount, account_reference, transaction_desc, callback_url)
+                return HttpResponse(response)
+'''
+
+
+from django_daraja.mpesa.core import MpesaClient
+from django.http import JsonResponse 
+class stk_push(APIView):
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]  # Only allow authenticated users to make POST requests
+        else:
+            return super().get_permissions()
+    def post(self, request):
+        self.check_permissions(request)
+        serializer = CoursePurchaseRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            # If the data is valid, save the validated data
+            serializer.save()
+            # Extract necessary fields from the validated data
+            phone_number = serializer.validated_data.get('phone')
+            amount = serializer.validated_data.get('amount')
+            client = serializer.validated_data.get('client_id')
+            course = serializer.validated_data.get('course_id')
+            merchant_request_id = serializer.validated_data.get('MerchantRequestID')
+            account_reference = 'reference'
+            transaction_desc = 'Universal Online University'
+            callback_url = 'https://darajambili.herokuapp.com/express-payment'
+            # Perform the STK push operation with the extracted data
+            cl = MpesaClient()
+            response = cl.stk_push(phone_number, amount, account_reference, transaction_desc, callback_url)
+            # Extract necessary information from the response object
+            response_data = {
+                'merchant_request_id': response.merchant_request_id,
+                'checkout_request_id': response.checkout_request_id,
+                'response_code': response.response_code,
+                # Add other necessary fields here
+            }        
+            # Return the response data as JSON
+            course_purchase_request = CoursePurchaseRequest.objects.create(
+                phone=phone_number,
+                amount=amount,
+                client_id=client,
+                course_id=course,
+                MerchantRequestID=response_data['merchant_request_id'],
+                CheckoutRequestID=response_data['merchant_request_id'],
+                ResponseCode=response_data['response_code']
+            )
+
+            course_purchase_serializer = CoursePurchaseRequestSerializer(course_purchase_request)
+            return Response(course_purchase_serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            # If the data is not valid, return validation errors
+            return JsonResponse({'errors': serializer.errors}, status=400)
+       
+       
+class LNMCallbackUrlAPIView(CreateAPIView):
+    queryset = LNMOnline.objects.all()
+    serializer_class = LNMOnlineSerializer
+    permission_classes = [AllowAny]
+    def create(self, request):        
+        merchant_request_id = request.data["Body"]["stkCallback"]["MerchantRequestID"]
+        checkout_request_id = request.data["Body"]["stkCallback"]["CheckoutRequestID"]
+        result_code = request.data["Body"]["stkCallback"]["ResultCode"]
+        result_description = request.data["Body"]["stkCallback"]["ResultDesc"]
+        amount = request.data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][0]["Value"]
+        mpesa_receipt_number = request.data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][1]["Value"]
+        balance = ""
+        transaction_date = request.data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][3]["Value"]
+        phone_number = request.data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][4]["Value"]
+        from datetime import datetime
+        str_transaction_date = str(transaction_date)
+        transaction_datetime = datetime.strptime(str_transaction_date, "%Y%m%d%H%M%S")
+        import pytz
+        aware_transaction_datetime = pytz.utc.localize(transaction_datetime)
+        our_model = LNMOnline.objects.create(
+            CheckoutRequestID=checkout_request_id,
+            MerchantRequestID=merchant_request_id,
+            Amount=amount,
+            ResultCode=result_code,
+            ResultDesc=result_description,
+            MpesaReceiptNumber=mpesa_receipt_number,
+            Balance=balance,
+            TransactionDate=aware_transaction_datetime,
+            PhoneNumber=phone_number,
+        )
+        our_model.save()
+        approve_purchase = CoursePurchaseRequest.objects.get(CheckoutRequestID=checkout_request_id)
+        approve_purchase.is_approved = True
+        approve_purchase.save()
+
+        from rest_framework.response import Response
+        return Response({"OurResultDesc": "YEEY!!! It worked!"})
 
 
 class UpdateStudentView(APIView):
@@ -241,7 +411,243 @@ class UpdateStudentView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class CouponPurchaseListCreateAPIView(APIView):
+    def get(self, request):
+        coupons = CoursePurchaseCoupon.objects.all() 
+        serializer = CouponPurchaseCouponSerializer(coupons, many=True)
+        return Response(serializer.data)
+    def post(self, request):
+        data = request.data 
+        try: 
+            coupon_code = data['coupon_code']
+            # Check if the coupon exists
+            if CouponPurchase.objects.filter(coupon_code=coupon_code).exists():
+                # Coupon exists, proceed with purchase logic
+                serializer = CouponPurchaseCouponSerializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # Coupon does not exist, return an error response
+                return Response({'error': 'Coupon does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError:
+            # Handle if 'coupon_code' is not found in the request data
+            return Response({'error': 'Coupon code is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
+class CouponPurchaseRetrieveUpdateDestroyAPIView(APIView):
+    def get_object(self, pk):
+        return get_object_or_404(CoursePurchaseCoupon, pk=pk)
+
+    def get(self, request, pk):
+        coupon = self.get_object(pk)
+        serializer = CouponPurchaseCouponSerializer(coupon)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        coupon = self.get_object(pk)
+        serializer = CouponPurchaseCouponSerializer(coupon, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        coupon = self.get_object(pk)
+        coupon.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class StudentPurchasedCoursesView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'POST':
+            return [IsAuthenticated()]   # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions() 
+    def get(self, request, student_id, *args, **kwargs):
+        # Retrieve all CoursePurchaseCoupon entries for the given student_id
+        purchase_coupons = CoursePurchaseCoupon.objects.filter(student_id=student_id)
+        # Retrieve all approved CoursePurchaseRequest entries for the given client_id
+        approved_purchase_requests = CoursePurchaseRequest.objects.filter(client_id=student_id, is_approved=True)
+        # Combine the course_id from both querysets
+        course_ids_coupons = purchase_coupons.values_list('course_id', flat=True)
+        course_ids_requests = approved_purchase_requests.values_list('course_id', flat=True)
+        # Combine and deduplicate the course_ids
+        combined_course_ids = list(set(course_ids_coupons) | set(course_ids_requests))
+        if not combined_course_ids:
+            return Response({'error': 'No courses found for this student.'}, status=status.HTTP_404_NOT_FOUND)
+        # Retrieve the Books objects matching the course_id
+        courses = Course.objects.filter(_id__in=combined_course_ids)    
+        # Serialize the Course objects
+        serializer = CourseSerializer(courses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+class StudentPurchasedCoursesEventsView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'POST':
+            return [IsAuthenticated()]   # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions()
+         
+    def get(self, request, student_id, *args, **kwargs):
+        # Retrieve all CoursePurchaseCoupon entries for the given student_id
+        purchase_coupons = CoursePurchaseCoupon.objects.filter(student_id=student_id)
+        approved_purchase_requests = CoursePurchaseRequest.objects.filter(client_id=student_id, is_approved=True)
+         # Combine the course_id from both querysets
+        course_ids_coupons = purchase_coupons.values_list('course_id', flat=True)
+        course_ids_requests = approved_purchase_requests.values_list('course_id', flat=True)
+        # Combine and deduplicate the course_ids
+        combined_course_ids = list(set(course_ids_coupons) | set(course_ids_requests))
+        if not combined_course_ids:
+            return Response({'error': 'No events found for this student.'}, status=status.HTTP_404_NOT_FOUND)
+        # Retrieve the Books objects matching the course_ids
+        events = Events.objects.filter(_id__in=combined_course_ids)
+        # Serialize the Events objects
+        serializer = EventsSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class StudentPurchasedCoursesView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'POST':
+            return [IsAuthenticated()]   # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions() 
+    def get(self, request, student_id, *args, **kwargs):
+        # Retrieve all CoursePurchaseCoupon entries for the given student_id
+        purchase_coupons = CoursePurchaseCoupon.objects.filter(student_id=student_id)
+
+
+        approved_purchase_requests = CoursePurchaseRequest.objects.filter(client_id=student_id, is_approved=True)
+        # Combine the course_id from both querysets
+        course_ids_coupons = purchase_coupons.values_list('course_id', flat=True)
+        course_ids_requests = approved_purchase_requests.values_list('course_id', flat=True)
+        # Combine and deduplicate the course_ids
+        combined_course_ids = list(set(course_ids_coupons) | set(course_ids_requests))
+        if not combined_course_ids:
+            return Response({'error': 'No courses found for this student.'}, status=status.HTTP_404_NOT_FOUND)
+        # Retrieve the Books objects matching the course_ids
+        courses = Course.objects.filter(_id__in=combined_course_ids)    
+        # Serialize the Course objects
+        serializer = CourseSerializer(courses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+class StudentPurchasedBooksView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'POST':
+            return [IsAuthenticated()]   # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions() 
+    def get(self, request, student_id, *args, **kwargs):
+    # Retrieve all CoursePurchaseCoupon entries for the given student_id
+        purchase_coupons = CoursePurchaseCoupon.objects.filter(student_id=student_id)
+        # Retrieve all approved CoursePurchaseRequest entries for the given client_id
+        approved_purchase_requests = CoursePurchaseRequest.objects.filter(client_id=student_id, is_approved=True)
+        # Combine the course_id from both querysets
+        course_ids_coupons = purchase_coupons.values_list('course_id', flat=True)
+        course_ids_requests = approved_purchase_requests.values_list('course_id', flat=True)
+        # Combine and deduplicate the course_ids
+        combined_course_ids = list(set(course_ids_coupons) | set(course_ids_requests))
+        if not combined_course_ids:
+            return Response({'error': 'No books found for this student.'}, status=status.HTTP_404_NOT_FOUND)
+        # Retrieve the Books objects matching the course_ids
+        books = Books.objects.filter(_id__in=combined_course_ids)
+        # Serialize the Books objects
+        serializer = BooksSerializer(books, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class StudentPurchasedVideosView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'POST':
+            return [IsAuthenticated()]   # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions() 
+    def get(self, request, student_id, *args, **kwargs):
+        purchase_coupons = CoursePurchaseCoupon.objects.filter(student_id=student_id)
+        # Retrieve all approved CoursePurchaseRequest entries for the given client_id
+        approved_purchase_requests = CoursePurchaseRequest.objects.filter(client_id=student_id, is_approved=True)
+        # Combine the course_id from both querysets
+        course_ids_coupons = purchase_coupons.values_list('course_id', flat=True)
+        course_ids_requests = approved_purchase_requests.values_list('course_id', flat=True)
+        # Combine and deduplicate the course_ids
+        combined_course_ids = list(set(course_ids_coupons) | set(course_ids_requests))
+        videos = Video.objects.filter(_id__in=combined_course_ids)    
+        # Serialize the Course objects
+        serializer = VideoSerializer(videos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class RetrieveStudentCourses(APIView):
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [AllowAny()]  # Require authentication for retrieving course data
+        else:
+            return super().get_permissions()
+
+    def post(self, request, pk):
+        data = request.data
+        student_id = data['student_id']
+        # Query the database to get courses associated with the student ID
+        try:
+            student_courses = CoursePurchaseCoupon.objects.filter(student_id=student_id)
+            print(student_courses)
+            # Convert queryset to a list of dictionaries
+            courses_data = [
+                {
+                    '_id': course._id,
+                    'coupon_code': course.coupon_code,
+                    'student_id': course.student_id,
+                    'course_id': course.course_id,
+                    'student_first_name': course.student.first_name if course.student else None,
+                    'student_last_name': course.student.last_name if course.student else None
+                }
+                for course in student_courses
+            ]
+            # Return the data as JSON response
+            return Response(courses_data, status=status.HTTP_200_OK)
+        except CoursePurchaseCoupon.DoesNotExist:
+            # Handle if no courses are found for the student ID
+            return Response({'error': 'No courses found for the student.'}, status=status.HTTP_404_NOT_FOUND)
+        
 class CourseRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -295,10 +701,10 @@ class StudentEventView(APIView):
     def get(self, request, pk):
         try:
             self.check_permissions(request)
-            event = Users.objects.get(id=pk)
-        except Users.DoesNotExist:
+            event = Events.objects.get(course_id=pk)
+        except Events.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = StudentEventSerializer(event, many=False, context={'request': request})
+        serializer = StudentEventSerializer(event, many=True, context={'request': request})
         return Response(serializer.data)
     
 class EditCourseView(APIView):   
@@ -377,6 +783,73 @@ class PostRegisterView(APIView):
         post = Post.objects.all().order_by('-created_at')
         serializer = PostSerializer(post, many=True,  context={'request': request})
         return Response(serializer.data)        
+  
+class CouponRegisterView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'POST':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions()
+
+    def post(self, request):
+        self.check_permissions(request)
+        serializer = CouponPurchaseSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Registration successful"}, status=status.HTTP_200_OK)
+        else:
+            error_response = {
+                "error": "Invalid data",
+                "details": serializer.errors
+            }
+            print(error_response)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        try:
+            self.check_permissions(request)
+            coupon_purchases = CouponPurchase.objects.all().order_by('-created_at')
+            serializer = CouponPurchaseSerializer(coupon_purchases, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            error_response = {
+                "error": "Internal server error",
+                "details": str(e)  # Provide details of the exception for debugging purposes
+            }
+            return Response(error_response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def put(self, request, pk):
+        try:
+            self.check_permissions(request)
+            coupon = CouponPurchase.objects.get(_id=pk)
+        except CouponPurchase.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = CouponPurchaseSerializer(coupon, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            error_response = {
+                "error": "Invalid data",
+                "details": serializer.errors
+            }
+            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try: 
+            self.check_permissions(request)
+            coupon = CouponPurchase.objects.get(_id=pk)
+        except CouponPurchase.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        coupon.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     
 
 class PostRegisterView(APIView):
@@ -416,10 +889,14 @@ class BooksRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]  # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         else:
-            return super().get_permissions()  # Use default permissions for other methods
+            return super().get_permissions()
         
     def post(self, request):
         self.check_permissions(request)
@@ -433,12 +910,97 @@ class BooksRegisterView(APIView):
         self.check_permissions(request)
         post = Books.objects.all().order_by('-created_at')
         serializer = BooksSerializer(post, many=True,  context={'request': request})
-        return Response(serializer.data)        
-    
+        return Response(serializer.data)  
+          
+    def put(self, request, pk):
+        try:
+            self.check_permissions(request)
+            book = Books.objects.get(_id=pk)
+        except Books.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
+        serializer = BooksSerializer(book, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            error_response = {
+                "error": "Invalid data",
+                "details": serializer.errors
+            }
+            print(error_response)  # Print the error response
+            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try: 
+            self.check_permissions(request)
+            book = Books.objects.get(_id=pk)
+        except Books.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        book.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+from django.http import JsonResponse
+from django.core.serializers import serialize
+import json
+from rest_framework.parsers import FileUploadParser
+class VideoRegisterView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
+        elif self.request.method == 'POST':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions()  # Use default permissions for other methods 
+
+    def post(self, request):
+        self.check_permissions(request)
+        serializer = VideoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Registration successful"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+   
+
+    def get(self, request):
+        videos = Video.objects.all().order_by('-created_at')
+        serializer = VideoSerializer(videos, many=True, context={'request': request})
+        return Response(serializer.data)
+       
+    def put(self, request, pk):
+        try:
+            self.check_permissions(request)
+            video = Video.objects.get(_id=pk)
+        except Video.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = VideoSerializer(video, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            error_response = {
+                "error": "Invalid data",
+                "details": serializer.errors
+            }
+            print(error_response)  # Print the error response
+            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try: 
+            self.check_permissions(request)
+            video = Video.objects.get(_id=pk)
+        except Video.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        video.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class EditPostView(APIView):  
-
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]  # Require authentication for retrieving course data
@@ -544,7 +1106,7 @@ class EventDetailView(APIView):
 
     def put(self, request, pk):
         self.check_permissions(request)
-        event = self.get_object(pk)
+        event = Events.objects.get(_id=pk)
         serializer = EventsSerializer(event, data=request.data)
         if serializer.is_valid():
             serializer.save()

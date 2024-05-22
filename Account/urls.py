@@ -5,14 +5,17 @@ from .views import (
        EditCourseView,EditPostView,EditEventView,
         PostRegisterView, ResetPasswordView, 
         StudentCourseDetailView, RegisterSalesView,
-        RetrieveSalesView,
-        BooksRegisterView, CourseFilter,StudentEventView,
+        RetrieveSalesView, StudentPurchasedBooksView, StudentPurchasedCoursesView, StudentPurchasedVideosView,
+        VideoRegisterView, RetrieveStudentCourses,
+        StudentPurchasedCoursesEventsView,
+        BooksRegisterView, CourseFilter,
+        StudentEventView, stk_push, CouponRegisterView
 )
+
 from . import views 
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
-
 urlpatterns = [
     path('token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -21,7 +24,25 @@ urlpatterns = [
     path('api/register/staff', views.RegisterStaffView.as_view(), name='register-staff'),
     path('api/register/student', views.RegisterStudentView.as_view(), name='register-student'),
     path('api/register/sales', views.RegisterSalesView.as_view(), name='register-student'),
-    path('api/register/books', views.BooksRegisterView.as_view(), name='register-student'),
+    path('api/register/books', views.BooksRegisterView.as_view(), name='register-books'),
+    path('api/register/book/<str:pk>/', views.BooksRegisterView.as_view(), name='register-books'),
+    path('api/register/video/', views.VideoRegisterView.as_view(), name='video-register'),
+    path('api/access/videos/<str:pk>/', views.VideoRegisterView.as_view(), name='video-register'),
+    
+    path('api/register/coupon', views.CouponRegisterView.as_view(), name='coupon-register'),
+    path('api/register/coupon/<str:pk>/', views.CouponRegisterView.as_view(), name='coupon-register'),
+
+    
+    path('student-courses/<int:student_id>/', StudentPurchasedCoursesView.as_view(), name='student-purchased-courses'),        
+    path('student-events/<int:student_id>/', StudentPurchasedCoursesEventsView.as_view(), name='student-purchased-courses'),
+    path('student-books/<int:student_id>/', StudentPurchasedBooksView.as_view(), name='student-purchased-courses'),        
+    path('student-videos/<int:student_id>/', StudentPurchasedVideosView.as_view(), name='student-purchased-courses'),
+
+
+
+    path('api/register/coupon-course', views.CouponPurchaseListCreateAPIView.as_view(), name='coupon-register'),
+    path('api/register/coupon-course/<str:pk>/', views.CouponPurchaseRetrieveUpdateDestroyAPIView.as_view(), name='coupon-register'),
+    
     path('api/user/student/', views.StudentUserView.as_view(), name='register'),
     path('confirm-registration/<str:uidb64>/<str:token>/', ConfirmRegistrationView.as_view(), name='confirm-registration'),
 
@@ -44,9 +65,9 @@ urlpatterns = [
     path('api/register/post', PostRegisterView.as_view(), name='post-register'),
     path('api/register/events/', views.EventListView.as_view(), name='event-list'),
     path('api/register/event/<str:pk>/', views.EventListView.as_view(), name='event-list'),
-    path('api/register/events/<int:pk>/', views.EventDetailView.as_view(), name='event-detail'),
+    path('api/register/events/<str:pk>/', views.EventDetailView.as_view(), name='event-detail'),
     path('api/students/profile/<int:pk>/', views.StudentProfileDetailView.as_view(), name='event-detail'),
-    
-
+    path('api/stk-push/', views.stk_push.as_view(), name='stk_push'),
+    path('api/express/check', views.LNMCallbackUrlAPIView.as_view(), name='express-check')
     # other urlpatterns...
 ]

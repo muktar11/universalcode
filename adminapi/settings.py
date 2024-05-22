@@ -37,15 +37,16 @@ DEBUG = False
 
 
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://138.68.190.39', "http://universalonlineuniversity.org", "www.universalonlineuniversity.org", "universalonlineuniversity.org", '138.68.190.39', 'ef19-196-189-29-108.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://138.68.190.39', 'https://0cf0-196-189-29-233.ngrok-free.app', 
+                 "http://universalonlineuniversity.org",  '138.68.190.39', '0cf0-196-189-29-233.ngrok-free.app']
 
 
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000', 'http://192.168.100.16:3000', "http://universalonlineuniversity.org","www.universalonlineuniversity.org", "http://165.22.216.109", "http://localhost:5173", 
-    "http://192.168.100.156:8081", 'http://0.0.0.0:8000',  'http://192.168.100.156',  'http://196.188.169.145',
+    'http://localhost:3000', 'http://192.168.100.16:3000', "http://universalonlineuniversity.org", "http://165.22.216.109", "http://localhost:5173", 
+    "http://192.168.100.156:8081", 'http://0.0.0.0:8000', 'http://192.168.100.156', "https://0d72-196-189-29-233.ngrok-free.app",  'http://196.188.169.145',
     'http://192.168.1.4', "http://192.168.1.4:8000", "http://138.68.190.39"
 ]
 
@@ -87,6 +88,9 @@ INSTALLED_APPS = [
     'Account',
     'django_filters',
     'corsheaders',
+    'django_daraja',
+    'cloudinary',
+    'cloudinary_storage', #important
 ]
 
 MIDDLEWARE = [
@@ -106,7 +110,8 @@ import os
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ os.path.join(BASE_DIR, 'dist'),],
+        'DIRS': [# os.path.join(BASE_DIR, 'dist'),
+                 os.path.join(BASE_DIR, 'dist'),],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -188,8 +193,10 @@ REST_FRAMEWORK = {
 
 STATIC_URL = 'assets/'
 STATIC_ROOT = '/assets/'
+
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'dist/assets'),
+   os.path.join(BASE_DIR, 'dist/assets'),
+  #  os.path.join(BASE_DIR, 'build/static'),
 ]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -255,3 +262,68 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 BASE_URL="http://localhost:5173"
+
+
+MPESA_ENVIRONMENT = 'sandbox'
+# Credentials for the daraja app
+#MPESA_CONSUMER_KEY = 'nk16Y74eSbTaGQgc9WF8j6FigApqOMWr'
+MPESA_CONSUMER_KEY = 'uXDpQy5OwQTCfcZSbNSfpRrlx0Sut6yBvdZVACYIWQd0FZzA'
+#MPESA_CONSUMER_SECRET = '40fD1vRXCq90XFaU'
+MPESA_CONSUMER_SECRET = 'Ajdc1atGIYMiG5Yk6ldKjDG3Uqm8MktUFsX2fA46MwA71gAVfIFu3c5B4MM6YeOG'
+#Shortcode to use for transactions. For sandbox  use the Shortcode 1 provided on test credentials page
+MPESA_SHORTCODE = '174379'
+# Shortcode to use for Lipa na MPESA Online (MPESA Express) transactions
+# This is only used on sandbox, do not set this variable in production
+# For sandbox use the Lipa na MPESA Online Shorcode provided on test credentials page
+MPESA_EXPRESS_SHORTCODE = '174379'
+# Type of shortcode
+# Possible values:
+# - paybill (For Paybill)
+# - till_number (For Buy Goods Till Number)
+MPESA_SHORTCODE_TYPE = 'paybill'
+# Lipa na MPESA Online passkey
+# Sandbox passkey is available on test credentials page
+# Production passkey is sent via email once you go live
+#MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+MPESA_PASSKEY  = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+# Username for initiator (to be used in B2C, B2B, AccountBalance and TransactionStatusQuery Transactions)
+MPESA_INITIATOR_USERNAME = 'testapi'
+# Plaintext password for initiator (to be used in B2C, B2B, AccountBalance and TransactionStatusQuery Transactions)
+MPESA_INITIATOR_SECURITY_CREDENTIAL = 'Safaricom999!*!'
+
+import cloudinary
+import cloudinary.api 
+import cloudinary.uploader
+import cloudinary_storage
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dd1n03bmb',
+    'API_KEY': '699971822695764',
+    'API_SECRET': 'A_awCgM5I_GuloLSEuN3pXZy_vA'
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+'''
+import os
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'django.log'),
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+'''

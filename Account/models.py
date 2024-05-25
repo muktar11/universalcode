@@ -318,6 +318,8 @@ class EmailSubscription(models.Model):
 class Post(models.Model):
     _id = models.AutoField(primary_key=True, editable=False)
     image =  models.ImageField(blank=True, null=True)
+    videos = models.FileField(upload_to='videos/', blank=True, storage=VideoMediaCloudinaryStorage(),
+                              validators=[validate_video])
     caption = models.CharField(max_length=10000, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -439,7 +439,7 @@ class CouponPurchaseListCreateAPIView(APIView):
 class RetrieveAllTeachers(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -512,7 +512,7 @@ class StudentPurchasedCoursesView(APIView):
 class StudentPurchasedCoursesEventsView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -544,7 +544,7 @@ class StudentPurchasedCoursesEventsView(APIView):
 class StudentPurchasedCoursesView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -576,7 +576,7 @@ class StudentPurchasedCoursesView(APIView):
 class StudentPurchasedReceipt(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]   # Require authentication for retrieving course data
+            return [IsAuthenticated()]   # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -603,7 +603,7 @@ class StudentPurchasedReceipt(APIView):
 class StudentPurchasedBooksView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]   # Require authentication for retrieving course data
+            return [IsAuthenticated()]   # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -635,7 +635,7 @@ class StudentPurchasedBooksView(APIView):
 class StudentPurchasedVideosView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -662,7 +662,7 @@ class StudentPurchasedVideosView(APIView):
 class RetrieveStudentCourses(APIView):
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         else:
             return super().get_permissions()
 
@@ -694,7 +694,7 @@ class RetrieveStudentCourses(APIView):
 class CourseRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -753,7 +753,7 @@ class StudentEventView(APIView):
 class EditCourseView(APIView):   
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -804,7 +804,7 @@ class EditCourseView(APIView):
 class PostRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -898,7 +898,7 @@ class CouponRegisterView(APIView):
 class PostRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -1229,7 +1229,7 @@ class EditEventView(APIView):
 class StudentProfileDetailView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -1267,7 +1267,7 @@ class StudentProfileDetailView(APIView):
 class StudentCourseDetailView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [AllowAny()]  # Require authentication for retrieving course data
+            return [IsAuthenticated()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':

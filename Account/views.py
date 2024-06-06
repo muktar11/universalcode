@@ -19,9 +19,9 @@ from .models import (
 Course, Post, Video, CoursePurchaseRequest, Events,Books, studentpurchasedcourses, )
 from .serializers import (
     CouponPurchaseCouponSerializer, CouponPurchaseSerializer, CoursePurchaseRequestSerializer, 
-    CoursePurchaseSerializer, MyTokenObtainPairSerializer, 
+    CoursePurchaseSerializer, LNMOnlineReceiptSerializer, MyTokenObtainPairSerializer, 
     RegisterSalesSerializer, LNMOnlineSerializer,
-    RegisterStaffSerializer, StudentProfileUpdateSerializer,
+    RegisterStaffSerializer, RetreiveStudentSerializer, StudentProfileUpdateSerializer,
     EmailSubscriptionSerializer, RegisterStudentSerializer,
     StudentCourseSerializer, CourseSerializer, PostSerializer,
     EventsSerializer,
@@ -436,6 +436,24 @@ class CouponPurchaseListCreateAPIView(APIView):
             # Handle if 'coupon_code' is not found in the request data
             return Response({'error': 'Coupon code is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
+class RetrieveAllTeachers(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]  # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'POST':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions() 
+    
+    def get(self, request):
+        student = Users.objects.filter(is_teacher=True)
+        serializer = RetreiveStudentSerializer(student, many=True, context={'request': request})
+        return Response(serializer.data)
+    
 class CouponPurchaseRetrieveUpdateDestroyAPIView(APIView):
     def get_object(self, pk):
         return get_object_or_404(CoursePurchaseCoupon, pk=pk)
@@ -494,7 +512,7 @@ class StudentPurchasedCoursesView(APIView):
 class StudentPurchasedCoursesEventsView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -526,7 +544,7 @@ class StudentPurchasedCoursesEventsView(APIView):
 class StudentPurchasedCoursesView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -555,12 +573,37 @@ class StudentPurchasedCoursesView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
+class StudentPurchasedReceipt(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]   # Require authentication for retrieving course data
+        elif self.request.method == 'PUT':
+            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        elif self.request.method == 'POST':
+            return [IsAuthenticated()]   # Only allow teachers to register
+        elif self.request.method == 'DELETE':
+             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
+        else:
+            return super().get_permissions() 
+        
+    def get(self, request, id):
+        # Retrieve the user instance by primary key (id)
+        user = get_object_or_404(Users, id=id)    
+        # Get the phone number from the user instance
+        phone = user.phone
+        print(phone)
+        # Filter LNMOnline records by phone number
+        receipts = LNMOnline.objects.filter(PhoneNumber=phone)
+        # Serialize the filtered records
+        serializer = LNMOnlineReceiptSerializer(receipts, many=True)
+        # Return the serialized data as a response
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
 
 class StudentPurchasedBooksView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]   # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -584,7 +627,7 @@ class StudentPurchasedBooksView(APIView):
         # Retrieve the Books objects matching the course_ids
         books = Books.objects.filter(_id__in=combined_course_ids)
         # Serialize the Books objects
-        serializer = BooksSerializer(books, many=True)
+        serializer = BooksSerializer(books, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -592,7 +635,7 @@ class StudentPurchasedBooksView(APIView):
 class StudentPurchasedVideosView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -651,7 +694,7 @@ class RetrieveStudentCourses(APIView):
 class CourseRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -710,7 +753,7 @@ class StudentEventView(APIView):
 class EditCourseView(APIView):   
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -761,7 +804,7 @@ class EditCourseView(APIView):
 class PostRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -855,7 +898,7 @@ class CouponRegisterView(APIView):
 class PostRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -1186,7 +1229,7 @@ class EditEventView(APIView):
 class StudentProfileDetailView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':
@@ -1224,7 +1267,7 @@ class StudentProfileDetailView(APIView):
 class StudentCourseDetailView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
+            return [AllowAny()]  # Require authentication for retrieving course data
         elif self.request.method == 'PUT':
             return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
         elif self.request.method == 'POST':

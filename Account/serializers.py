@@ -115,8 +115,13 @@ class RegisterStaffSerializer(serializers.ModelSerializer):
         
         return user
 
-
-
+class RetreiveStudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users 
+        fields = ('email', 'first_name', 'last_name', 'phone',
+                   'profile_imageUrl',
+                  'extracurricular', 'mda_imageUrl', 'bio', 
+                  'school_credentials_imageUrl', 'terms_and_agreement_imageUrl')
 
 class RegisterSalesSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
@@ -183,6 +188,7 @@ class RegisterStudentSerializer(serializers.ModelSerializer):
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             phone=validated_data['phone'], 
+            profile_imageUrl=validated_data['profile_imageUrl'],
             address=validated_data['address'],  
             sales_person_id=validated_data['sales_person_id']    
         ) 
@@ -472,6 +478,10 @@ class LNMOnlineSerializer(serializers.ModelSerializer):
         model = LNMOnline
         fields = ("id",)
 
+class LNMOnlineReceiptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LNMOnline
+        fields = ("__all__")
 
 
 class CouponPurchaseSerializer(serializers.ModelSerializer):

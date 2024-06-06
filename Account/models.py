@@ -239,10 +239,8 @@ class Users(AbstractBaseUser, PermissionsMixin):
     my_events = models.ForeignKey(Events, on_delete=models.CASCADE, blank=True, null=True)
     courses = models.ManyToManyField(Course, blank=True)  # Change ForeignKey to ManyToManyField
     Term = models.CharField(max_length=255, blank=True, null=True)
-    school_credentials_two_imageId = models.CharField(max_length=255, blank=True, null=True)
-    school_credentials_two_imageUrl = models.CharField(max_length=1000, blank=True, null=True)
-    school_credentials_three_imageId = models.CharField(max_length=255, blank=True, null=True)
-    school_credentials_three_imageUrl = models.CharField(max_length=1000, blank=True, null=True)
+    school_credentials_two_imageUrl = models.ImageField(max_length=1000, blank=True, null=True)
+    school_credentials_three_imageUrl = models.ImageField(max_length=1000, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     sales_person_id = models.CharField(max_length=1000, blank=True, null=True)
     my_courses = models.CharField(max_length=50, blank=True, null=True, choices=AUDIENCE_CHOICES)
@@ -315,6 +313,16 @@ class EmailSubscription(models.Model):
     email = models.EmailField(max_length=255, blank=True, null=True)
 
 
+from django.core.files.storage import FileSystemStorage
+
+
+from django.conf import settings
+class LocalFileSystemStorage(FileSystemStorage):
+    def __init__(self, *args, **kwargs):
+        if not 'location' in kwargs:
+            kwargs['location'] = settings.MEDIA_ROOT
+        super(LocalFileSystemStorage, self).__init__(*args, **kwargs)
+
 class Post(models.Model):
     _id = models.AutoField(primary_key=True, editable=False)
     image =  models.ImageField(blank=True, null=True)
@@ -326,7 +334,7 @@ class Post(models.Model):
 class Books(models.Model):
     _id = models.AutoField(primary_key=True, editable=False)
     course_id = models.CharField(max_length=255, blank=True, null=True)
-    Book_imageUrl = models.FileField(max_length=1000, blank=True, null=True)
+    Book_imageUrl = models.FileField(max_length=1000, blank=True, null=True, storage=LocalFileSystemStorage())
     created_at = models.DateTimeField(auto_now_add=True)
     caption = models.CharField(max_length=255, blank=True, null=True)
     audience = models.CharField(max_length=255, blank=True, null=True)

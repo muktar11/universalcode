@@ -5,7 +5,7 @@ from .views import (
        EditCourseView,EditPostView,EditEventView,
         PostRegisterView, ResetPasswordView, 
         StudentCourseDetailView, RegisterSalesView,
-        RetrieveSalesView, StudentPurchasedBooksView, StudentPurchasedCoursesView, StudentPurchasedVideosView,
+        RetrieveSalesView, StudentPurchasedBooksView, StudentPurchasedCoursesView, StudentPurchasedReceipt, StudentPurchasedVideosView,
         VideoRegisterView, RetrieveStudentCourses,
         StudentPurchasedCoursesEventsView,
         BooksRegisterView, CourseFilter,
@@ -28,7 +28,7 @@ urlpatterns = [
     path('api/register/book/<str:pk>/', views.BooksRegisterView.as_view(), name='register-books'),
     path('api/register/video/', views.VideoRegisterView.as_view(), name='video-register'),
     path('api/access/videos/<str:pk>/', views.VideoRegisterView.as_view(), name='video-register'),
-    
+    path('api/access/teachers', views.RetrieveAllTeachers.as_view(), name="retireve-all-teacher"),
     path('api/register/coupon', views.CouponRegisterView.as_view(), name='coupon-register'),
     path('api/register/coupon/<str:pk>/', views.CouponRegisterView.as_view(), name='coupon-register'),
 
@@ -37,7 +37,7 @@ urlpatterns = [
     path('student-events/<int:student_id>/', StudentPurchasedCoursesEventsView.as_view(), name='student-purchased-courses'),
     path('student-books/<int:student_id>/', StudentPurchasedBooksView.as_view(), name='student-purchased-courses'),        
     path('student-videos/<int:student_id>/', StudentPurchasedVideosView.as_view(), name='student-purchased-courses'),
-
+    path('student-receipt/<int:id>/', StudentPurchasedReceipt.as_view(), name='student-purchased-courses'),
 
 
     path('api/register/coupon-course', views.CouponPurchaseListCreateAPIView.as_view(), name='coupon-register'),

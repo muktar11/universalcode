@@ -23,11 +23,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # newadmin@gmail.com
 # SECURITY WARNING: keep the secret key used in production secret!
 
+import os
+import environ
 
 
+# Define BASE_DIR
+BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Initialize environment variables
+env = environ.Env()
+# Reading .env file
+env_file = os.path.join(BASE_DIR, '.env')
+environ.Env.read_env(env_file)
 
-SECRET_KEY = 'django-insecure-m$%0yge@44f7j8&np8$1vi@-t783-jpmzlv^lkq6)c+me-#*@b'
+# Access environment variables using env() method
+SECRET_KEY = env("SECRET_KEY")
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -37,17 +48,19 @@ DEBUG = False
 
 
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost',  
-                  "universalonlineuniversity.org",  '138.68.190.39', ]
+ALLOWED_HOSTS = ['127.0.0.1','localhost', 'https://138.68.190.39' 
+                 "https://universalonlineuniversity.org",  '138.68.190.39',
+                
+                ]
 
 
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000', 'http://192.168.100.16:3000', "http://universalonlineuniversity.org", "http://165.22.216.109", "http://localhost:5173", 
-    "http://192.168.100.156:8081", 'http://0.0.0.0:8000', 'http://192.168.100.156', "https://0d72-196-189-29-233.ngrok-free.app",  'http://196.188.169.145',
-    'http://192.168.1.4', "http://192.168.1.4:8000", "http://138.68.190.39"
+    'http://localhost:3000', 'http://192.168.100.16:3000', "https://universalonlineuniversity.org", "http://165.22.216.109", "http://localhost:5173", 
+    "http://192.168.100.156:8081", 'http://0.0.0.0:8000', 'http://192.168.100.156',  'http://196.188.169.145',
+    'http://192.168.1.4', "http://192.168.1.4:8000", "https://138.68.190.39"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -221,7 +234,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(seconds=3660),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=50),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -260,45 +273,49 @@ EMAIL_HOST_USER = 'muktarabdulmelik9@gmail.com'
 EMAIL_HOST_PASSWORD = 'jkohpocdfbkiwhpe'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
+EMAIL_USE_SSL = True 
 BASE_URL="http://localhost:5173"
 
 
-MPESA_ENVIRONMENT = 'sandbox'
+MPESA_ENVIRONMENT = env("MPESA_ENVIRONMENT") 
 # Credentials for the daraja app
-#MPESA_CONSUMER_KEY = 'nk16Y74eSbTaGQgc9WF8j6FigApqOMWr'
-MPESA_CONSUMER_KEY = 'uXDpQy5OwQTCfcZSbNSfpRrlx0Sut6yBvdZVACYIWQd0FZzA'
+MPESA_CONSUMER_KEY = env("MPESA_CONSUMER_KEY")
 #MPESA_CONSUMER_SECRET = '40fD1vRXCq90XFaU'
-MPESA_CONSUMER_SECRET = 'Ajdc1atGIYMiG5Yk6ldKjDG3Uqm8MktUFsX2fA46MwA71gAVfIFu3c5B4MM6YeOG'
-#Shortcode to use for transactions. For sandbox  use the Shortcode 1 provided on test credentials page
-MPESA_SHORTCODE = '174379'
+MPESA_CONSUMER_SECRET = env("MPESA_CONSUMER_SECRET")
+#Shortcode to use for transations. For sandbox  use the Shortcode 1 provided on test credentials page
+MPESA_SHORTCODE = env("MPESA_SHORTCODE")
 # Shortcode to use for Lipa na MPESA Online (MPESA Express) transactions
 # This is only used on sandbox, do not set this variable in production
 # For sandbox use the Lipa na MPESA Online Shorcode provided on test credentials page
-MPESA_EXPRESS_SHORTCODE = '174379'
+MPESA_EXPRESS_SHORTCODE = env("MPESA_EXPRESS_SHORTCODE")
 # Type of shortcode
 # Possible values:
 # - paybill (For Paybill)
 # - till_number (For Buy Goods Till Number)
-MPESA_SHORTCODE_TYPE = 'paybill'
+MPESA_SHORTCODE_TYPE = env("MPESA_SHORTCODE_TYPE")
 # Lipa na MPESA Online passkey
 # Sandbox passkey is available on test credentials page
 # Production passkey is sent via email once you go live
 #MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-MPESA_PASSKEY  = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+MPESA_PASSKEY  = env("MPESA_PASSKEY")
 # Username for initiator (to be used in B2C, B2B, AccountBalance and TransactionStatusQuery Transactions)
-MPESA_INITIATOR_USERNAME = 'testapi'
+MPESA_INITIATOR_USERNAME = env("MPESA_INITIATOR_USERNAME")
 # Plaintext password for initiator (to be used in B2C, B2B, AccountBalance and TransactionStatusQuery Transactions)
-MPESA_INITIATOR_SECURITY_CREDENTIAL = 'Safaricom999!*!'
+MPESA_INITIATOR_SECURITY_CREDENTIAL = env("MPESA_INITIATOR_SECURITY_CREDENTIAL")
 
 import cloudinary
 import cloudinary.api 
 import cloudinary.uploader
 import cloudinary_storage
+
+import environ
+env = environ.Env()
+environ.Env.read_env()
+
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dd1n03bmb',
-    'API_KEY': '699971822695764',
-    'API_SECRET': 'A_awCgM5I_GuloLSEuN3pXZy_vA'
+    'CLOUD_NAME': env("CLOUD_NAME"),
+    'API_KEY': env("API_KEY"),
+    'API_SECRET': env("API_SECRET")
 }
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 '''

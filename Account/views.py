@@ -76,7 +76,83 @@ class MyTokenObtainPairView(TokenObtainPairView):
         except Users.DoesNotExist:
             return None 
 
-from rest_framework import serializers  # Add this import
+
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+class PasswordResetRequestView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = Users.objects.get(email=email)
+            reset_code = get_random_string(length=6, allowed_chars='0123456789')
+            user.reset_code = reset_code
+            user.reset_code_expires_at = timezone.now() + timedelta(hours=1)
+            user.save()
+            '''
+            send_mail(
+                'Password Reset Code',
+                f'Your password reset code is: {reset_code}',
+                'no-reply@universal.edu',
+                [email],
+                fail_silently=False,
+            )
+            '''
+            return Response({"email": user.email}, status=status.HTTP_200_OK)
+        except Users.DoesNotExist:
+            return Response({"error": "Email not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        
+class CodeVerificationView(APIView):
+    def post(self, request, *args, **kwargs):
+        code = request.data.get('code')
+        print(code)
+        email = request.data.get('email')
+        print(email)
+
+        try:
+            user = Users.objects.get(email=email)
+            if user.reset_code == code and timezone.now() < user.reset_code_expires_at:
+                return Response({"email": user.email, "code": code}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Invalid or expired code."}, status=status.HTTP_400_BAD_REQUEST)
+        except Users.DoesNotExist:
+            return Response({"error": "Email not found."}, status=status.HTTP_400_BAD_REQUEST)
+        
+class PasswordResetView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        print('email', email)
+        code = request.data.get('code')
+        print('code', code)
+        new_password = request.data.get('new_password')
+        print('new_password', new_password )
+        confirm_password = request.data.get('confirm_password')
+        print('confirm_password', confirm_password)
+
+        if new_password != confirm_password:
+            return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = Users.objects.get(email=email)
+            if user.reset_code == code and timezone.now() < user.reset_code_expires_at:
+                user.set_password(new_password)
+                user.reset_code = None
+                user.reset_code_expires_at = None
+                user.save()
+                return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Invalid or expired code."}, status=status.HTTP_400_BAD_REQUEST)
+        except Users.DoesNotExist:
+            return Response({"error": "Email not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+        
 
 class RegisterStudentView(APIView):
     def get_permissions(self):

@@ -9,7 +9,8 @@ from .views import (
         VideoRegisterView, RetrieveStudentCourses,
         StudentPurchasedCoursesEventsView,
         BooksRegisterView, CourseFilter,
-        StudentEventView, stk_push, CouponRegisterView
+        StudentEventView, stk_push, CouponRegisterView,
+        PasswordResetRequestView, CodeVerificationView, PasswordResetView
 )
 
 from . import views 
@@ -31,6 +32,10 @@ urlpatterns = [
     path('api/access/teachers', views.RetrieveAllTeachers.as_view(), name="retireve-all-teacher"),
     path('api/register/coupon', views.CouponRegisterView.as_view(), name='coupon-register'),
     path('api/register/coupon/<str:pk>/', views.CouponRegisterView.as_view(), name='coupon-register'),
+
+    path('password-reset-request/', PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('code-verification/', CodeVerificationView.as_view(), name='code_verification'),
+    path('password-reset/', PasswordResetView.as_view(), name='password_reset'),
 
     
     path('student-courses/<int:student_id>/', StudentPurchasedCoursesView.as_view(), name='student-purchased-courses'),        

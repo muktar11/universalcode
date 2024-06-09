@@ -77,6 +77,8 @@ class RegisterStaffSerializer(serializers.ModelSerializer):
         return user
 '''
 
+
+
 class RegisterStaffSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     password2 = serializers.CharField(write_only=True, required=False)

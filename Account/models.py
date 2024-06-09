@@ -241,6 +241,8 @@ class Users(AbstractBaseUser, PermissionsMixin):
     Term = models.CharField(max_length=255, blank=True, null=True)
     school_credentials_two_imageUrl = models.ImageField(max_length=1000, blank=True, null=True)
     school_credentials_three_imageUrl = models.ImageField(max_length=1000, blank=True, null=True)
+    reset_code = models.CharField(max_length=6, blank=True, null=True)
+    reset_code_expires_at = models.DateTimeField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     sales_person_id = models.CharField(max_length=1000, blank=True, null=True)
     my_courses = models.CharField(max_length=50, blank=True, null=True, choices=AUDIENCE_CHOICES)

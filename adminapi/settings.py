@@ -40,8 +40,9 @@ environ.Env.read_env(env_file)
 SECRET_KEY = env("SECRET_KEY")
 
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# SECURITY WAR
+# NING: don't run with debug turned on in production!
+DEBUG = True
 
 
 
@@ -50,7 +51,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['127.0.0.1','localhost', 'https://138.68.190.39' 
                  "https://universalonlineuniversity.org",  '138.68.190.39',
-                
+               "https://1dcd-196-189-29-219.ngrok-free.app", "1dcd-196-189-29-219.ngrok-free.app" 
                 ]
 
 

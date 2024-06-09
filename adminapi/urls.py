@@ -23,7 +23,7 @@ from django.views.static import serve
 from django.views.generic import TemplateView
 
 urlpatterns = [
-    path('admin/3014/', admin.site.urls),
+    path('adminaa/', admin.site.urls),
     path('Account/', include('Account.urls')),
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),  # Route for serving media files
 ]

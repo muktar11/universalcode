@@ -42,7 +42,7 @@ SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WAR
 # NING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 
 
@@ -51,7 +51,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1','localhost', 'https://138.68.190.39' 
                  "https://universalonlineuniversity.org",  '138.68.190.39',
-               "https://1dcd-196-189-29-219.ngrok-free.app", "1dcd-196-189-29-219.ngrok-free.app" 
+               "universalonlineuniversity.org", "1dcd-196-189-29-219.ngrok-free.app" 
                 ]
 
 

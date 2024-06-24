@@ -153,7 +153,7 @@ class PasswordResetView(APIView):
             return Response({"error": "Email not found."}, status=status.HTTP_400_BAD_REQUEST)
 
         
-
+from rest_framework_simplejwt.tokens import RefreshToken
 class RegisterStudentView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -161,17 +161,16 @@ class RegisterStudentView(APIView):
         elif self.request.method in ['PUT', 'POST']:
             return [AllowAny()]  # Only allow teachers to register
         else:
-            return super().get_permissions()   
-        
+            return super().get_permissions()           
     def post(self, request):
         serializer = RegisterStudentSerializer(data=request.data) 
         if serializer.is_valid():
-            user_data = serializer.save()
-            user = user_data['user']  # Get the user instance
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
             response_data = {
                 "message": "User registered successfully",
-                "refresh": user_data['refresh'],
-                "access": user_data['access'],
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
                 "id": user.id,
                 "is_student": user.is_student,
                 "is_sales": user.is_sales,
@@ -897,10 +896,11 @@ class PostRegisterView(APIView):
             return Response({"message": "Registration successful"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
     def get(self, request):
         self.check_permissions(request)
         post = Post.objects.all().order_by('-created_at')
-        serializer = PostSerializer(post, many=True,  context={'request': request})
+        serializer = PostSerializer(post, many=True, context={'request': request})
         return Response(serializer.data)        
   
 class CouponRegisterView(APIView):
@@ -971,39 +971,7 @@ class CouponRegisterView(APIView):
 
     
 
-class PostRegisterView(APIView):
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [IsAuthenticated()]  # Require authentication for retrieving course data
-        elif self.request.method == 'PUT':
-            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
-        elif self.request.method == 'POST':
-            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
-        elif self.request.method == 'DELETE':
-            return [IsWebAdminOrReadOnly()]  # Only allow teachers to register
-        else:
-            return super().get_permissions()
 
-    def post(self, request):
-        self.check_permissions(request)
-        serializer = PostSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Registration successful"}, status=status.HTTP_200_OK)
-        else:
-            error_response = {
-                "error": "Invalid data",
-                "details": serializer.errors
-            }
-            print(error_response)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request):
-        self.check_permissions(request)
-        post = Post.objects.all().order_by('-created_at')
-        serializer = PostSerializer(post, many=True, context={'request': request})
-        return Response(serializer.data)
-    
 class BooksRegisterView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -1528,3 +1496,4 @@ class SalesUserView(APIView):
             return Response(user_serializer.data)  # Accessing 'data' attribute of the serializer
         except Users.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        

@@ -174,32 +174,32 @@ from rest_framework_simplejwt.tokens import RefreshToken
 class RegisterStudentSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
-
     class Meta:
         model = Users
-        fields = ('id', 'first_name', 'last_name', 'email', 'phone', 'address', 'password', 'password2', 'sales_person_id')
-
+        fields = ('id', 'first_name', 'last_name', 'email', 'phone',
+                   'address', 'password', 'password2', 'sales_person_id')
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         return attrs
-
     def create(self, validated_data):
+        profile_image_url = validated_data.get('profile_imageUrl', '')  # Provide a default value or handle the absenc
+        sale_person_id = validated_data.get('sales_peron_id', 0)
         user = Users.objects.create(
-            email=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
+            email=validated_data['email'],
             phone=validated_data['phone'], 
-            profile_imageUrl=validated_data['profile_imageUrl'],
+            profile_imageUrl=profile_image_url,
             address=validated_data['address'],  
-            sales_person_id=validated_data['sales_person_id']    
+            sales_person_id=sale_person_id   
         ) 
         user.set_password(validated_data['password'])
         user.is_student = True
         user.is_active = True  # Deactivate the user until they confirm registration
         user.save()
-
         return user
+    
 '''
         # Generate unique token for email confirmation
         token_generator = default_token_generator
@@ -241,6 +241,7 @@ class RegisterStudentSerializer(serializers.ModelSerializer):
             return user
         else:
             return None 
+'''
 '''
 class RegisterStudentSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -313,7 +314,7 @@ class RegisterStudentSerializer(serializers.ModelSerializer):
         else:
             return None 
 
-
+'''
 class UsersSerializer(serializers.ModelSerializer):
     no_of_notifications = serializers.IntegerField()
 
@@ -533,8 +534,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                    'phone', 'gender', 'emailfield', 'profile_imageId', 
                    'profile_imageUrl', 'background_imageId', 'background_imageUrl',
                    'address', 'Program', 'Term', 'my_courses',
-                   'school_credentials_two_imageId', 'school_credentials_three_imageId',
-                   'school_credentials_imageUrl', 'school_credentials_two_imageUrl', 
+                    'school_credentials_two_imageUrl', 
                    'school_credentials_three_imageUrl', 'no_of_notifications', 'my_events',
                   ]
 
